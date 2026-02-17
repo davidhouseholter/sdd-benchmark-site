@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Synthetic Document Benchmark</title>
+<style>
+  :root { --bg: #fff; --fg: #1a1a1a; --muted: #666; --border: #ddd; --accent: #2563eb; --card: #f8f9fa; --green: #16a34a; --red: #dc2626; --amber: #d97706; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111; --fg: #e5e5e5; --muted: #999; --border: #333; --accent: #60a5fa; --card: #1a1a1a; --green: #4ade80; --red: #f87171; --amber: #fbbf24; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+  .site-nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 0; }
+  .site-nav .brand { font-weight: 700; font-size: .95rem; padding: 10px 16px 10px 0; border-right: 1px solid var(--border); margin-right: 4px; color: var(--fg); text-decoration: none; }
+  .site-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; padding: 10px 14px; transition: color .15s; }
+  .site-nav a:hover { color: var(--fg); }
+  .site-nav a.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+  p, li { color: var(--fg); }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; text-align: center; }
+  .stat-card .num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .stat-card .label { font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar { display: inline-block; height: 14px; border-radius: 3px; vertical-align: middle; }
+  .bar-f { background: var(--accent); }
+  .finding { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .finding .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; }
+  .tag-fail { background: var(--red); color: #fff; }
+  .tag-partial { background: var(--amber); color: #fff; }
+  .tag-confusion { background: #7c3aed; color: #fff; }
+  .tag-pass { background: var(--green); color: #fff; }
+  .finding h4 { font-size: 1rem; margin-bottom: 0.3rem; }
+  .finding .detail { font-size: 0.85rem; color: var(--muted); }
+  .placeholder { border: 2px dashed var(--border); border-radius: 8px; padding: 2rem; text-align: center; color: var(--muted); margin: 1rem 0; }
+  .method { font-size: 0.9rem; }
+  .method code { background: var(--card); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; }
+  ul { padding-left: 1.5rem; }
+  li { margin: 0.3rem 0; }
+
+  /* ── 3-column example comparison ────────────────────── */
+  .comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin: 1rem 0; }
+  .comparison img { width: 100%; border: 1px solid var(--border); border-radius: 6px; }
+  .comparison .cap { font-size: 0.78rem; color: var(--muted); text-align: center; margin-top: 0.25rem; }
+  @media (max-width: 640px) { .comparison { grid-template-columns: 1fr; } }
+
+  /* ── Entity color legend ────────────────────────────── */
+  .legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
+  .legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.8rem; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+
+  /* ── Dataset tier cards ───────────────────────────── */
+  .dataset-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+  .tier-card { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; background: var(--card); position: relative; }
+  .tier-card.tier-active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .tier-card.tier-planned { opacity: 0.6; }
+  .tier-badge { position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.15rem 0.4rem; border-radius: 3px; }
+  .tier-active .tier-badge { background: var(--accent); color: #fff; }
+  .tier-planned .tier-badge { background: var(--border); color: var(--muted); }
+  .tier-name { margin: 0 0 0.5rem; font-size: 1rem; }
+  .tier-stats { display: flex; gap: 1rem; margin-bottom: 0.5rem; }
+  .tier-stats > div { display: flex; flex-direction: column; }
+  .tier-num { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tier-unit { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .tier-detail { font-size: 0.72rem; color: var(--muted); }
+  .tier-link { display: inline-block; margin-top: 0.4rem; font-size: 0.72rem; color: var(--accent); text-decoration: none; }
+  .tier-link:hover { text-decoration: underline; }
+
+  /* ── Entity taxonomy chips ─────────────────────────── */
+  .entity-taxonomy { margin: 0.75rem 0 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .tax-group { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+  .tax-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); min-width: 5.5rem; }
+  .tax-chip { font-size: 0.72rem; font-weight: 500; padding: 0.2rem 0.55rem; border-radius: 4px; border-left: 3px solid var(--c, var(--muted)); background: var(--card); color: var(--fg); }
+  .tax-chip.tax-structural { --c: #94a3b8; color: var(--muted); }
+
+  /* ── Gallery controls ───────────────────────────────── */
+  .gallery-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: 0.75rem 2rem; position: sticky; top: 0; z-index: 100; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .phase-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .phase-toggle button { background: var(--card); color: var(--fg); border: none; padding: 0.4rem 0.8rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; border-right: 1px solid var(--border); transition: background 0.15s, color 0.15s; }
+  .phase-toggle button:last-child { border-right: none; }
+  .phase-toggle button.active { background: var(--accent); color: #fff; }
+  .phase-toggle button:hover:not(.active) { background: var(--border); }
+  .model-select { font-size: 0.8rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--fg); cursor: pointer; }
+  .model-select option:disabled { color: var(--muted); }
+
+  /* ── Gallery grid ───────────────────────────────────── */
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .gallery-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--card); transition: box-shadow 0.2s; }
+  .gallery-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .gallery-card .card-img-wrap { position: relative; overflow: hidden; cursor: pointer; }
+  .gallery-card img { width: 100%; display: block; }
+  .gallery-card .card-label { padding: 0.4rem 0.5rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+  .gallery-card .card-meta { padding: 0 0.5rem 0.4rem; font-size: 0.7rem; color: var(--muted); }
+
+  /* ── Card details (always visible) ──────────────────── */
+  .card-details { padding: 0.25rem 0.5rem 0.5rem; font-size: 0.7rem; color: var(--muted); }
+  .card-details .detail-row { display: flex; justify-content: space-between; padding: 0.1rem 0; border-top: 1px solid var(--border); }
+  .card-details .detail-row:first-child { border-top: none; }
+  .card-details .detail-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .card-details .hit-miss-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 0.3rem; }
+  .card-details .hit-miss-bar .bar-hit { background: var(--green); }
+  .card-details .hit-miss-bar .bar-conf { background: var(--amber); }
+  .card-details .hit-miss-bar .bar-miss { background: var(--red); }
+  .card-expand-btn { display: none; }
+  .card-inspect-link { display: block; text-align: center; font-size: 0.72rem; font-weight: 500; padding: 0.35rem 0.5rem; color: var(--accent); text-decoration: none; border-top: 1px solid var(--border); transition: background 0.15s; }
+  .card-inspect-link:hover { background: var(--border); }
+  .gallery-card { cursor: pointer; }
+
+  /* ── Lightbox ─────────────────────────────────────────── */
+  .lightbox { display: none; position: fixed; inset: 0; z-index: 999; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; }
+  .lightbox.active { display: flex; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  .lightbox-close { position: absolute; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; cursor: pointer; background: none; border: none; line-height: 1; }
+
+  /* ── Prediction legend ──────────────────────────────── */
+  .pred-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.5rem 0; }
+  .pred-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.8rem; }
+  .pred-legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  <a href="index.html" class="brand">SDD Benchmark</a>
+  <a href="index.html" class="active">Home</a>
+  <a href="templates.html">Templates</a>
+  <a href="paper.html">Paper</a>
+</nav>
+<div class="container">
+
+<h1>Synthetic Document Benchmark</h1>
+<p class="subtitle">Measuring NER accuracy on programmatically generated documents with pixel-perfect ground truth.</p>
+
+<!-- ── Overview ──────────────────────────────────────────── -->
+<h2>Project Overview</h2>
+<p>We generate synthetic documents (invoices, tax forms, medical records, legal pleadings, etc.) from HTML/CSS templates with embedded RDFa annotations. Each document comes with exact bounding boxes and entity labels &mdash; no human annotation needed.</p>
+<p>This benchmark measures how well off-the-shelf OCR + NER pipelines extract structured entities from these documents, establishing baselines before fine-tuning.</p>
+
+<!-- example comparisons + legends removed -->
+
+<!-- ── Dataset ──────────────────────────────────────────── -->
+<h2>Dataset</h2>
+
+<div class="dataset-tiers">
+  <div class="tier-card tier-active">
+    <div class="tier-badge">Current</div>
+    <h3 class="tier-name">SDD-Nano</h3>
+    <div class="tier-stats">
+      <div><span class="tier-num">401</span><span class="tier-unit">docs</span></div>
+      <div><span class="tier-num">781</span><span class="tier-unit">pages</span></div>
+      <div><span class="tier-num">45K</span><span class="tier-unit">annotations</span></div>
+    </div>
+    <div class="tier-detail">101 templates &middot; ~4 docs/template &middot; 19 entity types</div>
+    <a class="tier-link" href="https://huggingface.co/datasets/" target="_blank">huggingface.co/datasets/sdd-nano</a>
+  </div>
+  <div class="tier-card tier-planned">
+    <div class="tier-badge">Planned</div>
+    <h3 class="tier-name">SDD-Small</h3>
+    <div class="tier-stats">
+      <div><span class="tier-num">1K</span><span class="tier-unit">docs</span></div>
+      <div><span class="tier-num">~2K</span><span class="tier-unit">pages</span></div>
+      <div><span class="tier-num">~114K</span><span class="tier-unit">annotations</span></div>
+    </div>
+    <div class="tier-detail">101 templates &middot; ~10 docs/template</div>
+  </div>
+  <div class="tier-card tier-planned">
+    <div class="tier-badge">Planned</div>
+    <h3 class="tier-name">SDD-Medium</h3>
+    <div class="tier-stats">
+      <div><span class="tier-num">10K</span><span class="tier-unit">docs</span></div>
+      <div><span class="tier-num">~19K</span><span class="tier-unit">pages</span></div>
+      <div><span class="tier-num">~1.1M</span><span class="tier-unit">annotations</span></div>
+    </div>
+    <div class="tier-detail">101 templates &middot; ~99 docs/template</div>
+  </div>
+  <div class="tier-card tier-planned">
+    <div class="tier-badge">Planned</div>
+    <h3 class="tier-name">SDD-Large</h3>
+    <div class="tier-stats">
+      <div><span class="tier-num">100K</span><span class="tier-unit">docs</span></div>
+      <div><span class="tier-num">~195K</span><span class="tier-unit">pages</span></div>
+      <div><span class="tier-num">~11.4M</span><span class="tier-unit">annotations</span></div>
+    </div>
+    <div class="tier-detail">101 templates &middot; ~990 docs/template</div>
+  </div>
+</div>
+
+<div class="entity-taxonomy">
+  <div class="tax-group">
+    <span class="tax-label">Standard NER</span>
+    <span class="tax-chip" style="--c:#a855f7">PERSON</span>
+    <span class="tax-chip" style="--c:#3b82f6">ORG</span>
+    <span class="tax-chip" style="--c:#14b8a6">DATE</span>
+    <span class="tax-chip" style="--c:#ef4444">ADDRESS</span>
+    <span class="tax-chip" style="--c:#f97316">AMOUNT</span>
+    <span class="tax-chip" style="--c:#22c55e">PHONE</span>
+    <span class="tax-chip" style="--c:#eab308">ID</span>
+    <span class="tax-chip" style="--c:#06b6d4">EMAIL</span>
+    <span class="tax-chip" style="--c:#8b5cf6">LOCATION</span>
+    <span class="tax-chip" style="--c:#d946ef">QUANTITY</span>
+    <span class="tax-chip" style="--c:#0ea5e9">URL</span>
+    <span class="tax-chip" style="--c:#84cc16">DURATION</span>
+  </div>
+  <div class="tax-group">
+    <span class="tax-label">Structural</span>
+    <span class="tax-chip tax-structural">TABLE_CELL</span>
+    <span class="tax-chip tax-structural">TABLE_HEADER</span>
+    <span class="tax-chip tax-structural">FIELD_LABEL</span>
+    <span class="tax-chip tax-structural">TITLE</span>
+    <span class="tax-chip tax-structural">SECTION_TITLE</span>
+    <span class="tax-chip tax-structural">TEXT</span>
+    <span class="tax-chip tax-structural">CAPTION</span>
+  </div>
+</div>
+
+<!-- ── Template Gallery ──────────────────────────────────── -->
+<div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+  <h2 style="margin:0;">Template Gallery</h2>
+  <a href="templates.html" style="font-size:.85rem; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:4px 14px; border-radius:6px;">Open Template Inspector &rarr;</a>
+</div>
+<!-- GALLERY_DESC_START -->
+<p>All 101 document templates in the benchmark. Use the toggle to switch views. Click a card label to expand details.</p>
+<!-- GALLERY_DESC_END -->
+
+<div class="gallery-controls">
+  <div class="phase-toggle" id="phaseToggle">
+    <button class="active" data-phase="original">Document</button>
+    <button data-phase="gt">Ground Truth</button>
+    <button data-phase="pred">NER Results</button>
+  </div>
+  <select class="model-select" id="modelSelect">
+    <option value="deepseek_qwen3" selected>DeepSeek-OCR-2 + Qwen3-8B</option>
+    <option value="tesseract_spacy" disabled>Tesseract + spaCy (coming soon)</option>
+    <option value="tesseract_deberta" disabled>Tesseract + DeBERTa (coming soon)</option>
+    <option value="qwen_vl" disabled>Qwen3-VL + Qwen3 (coming soon)</option>
+  </select>
+</div>
+
+<!-- GALLERY_START -->
+<div class="gallery" id="gallery">
+  <div class="gallery-card" data-original="assets/gallery/academic_transcript.jpg" data-gt="assets/gallery/academic_transcript_overlay.jpg" data-structural="assets/gallery/academic_transcript_structural.jpg" data-pred="assets/gallery/academic_transcript_prediction.jpg" data-gt-meta="8 standard entities" data-structural-meta="150 structural regions" data-pred-meta="9 hit, 1 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/academic_transcript.jpg" alt="Academic Transcript"></div>
+    <div class="card-label"><a href="templates.html#academic_transcript" style="color:inherit;text-decoration:none;">Academic Transcript</a></div>
+    <div class="card-meta">158 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">10</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">1</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:90.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:10.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/adp_report.jpg" data-gt="assets/gallery/adp_report_overlay.jpg" data-structural="assets/gallery/adp_report_structural.jpg" data-pred="assets/gallery/adp_report_prediction.jpg" data-gt-meta="78 standard entities" data-structural-meta="114 structural regions" data-pred-meta="22 hit, 56 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/adp_report.jpg" alt="ADP Report"></div>
+    <div class="card-label"><a href="templates.html#adp_report" style="color:inherit;text-decoration:none;">ADP Report</a></div>
+    <div class="card-meta">192 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">78</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">56</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">44%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:28.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:71.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/affidavit.jpg" data-gt="assets/gallery/affidavit_overlay.jpg" data-structural="assets/gallery/affidavit_structural.jpg" data-pred="assets/gallery/affidavit_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="24 structural regions" data-pred-meta="11 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/affidavit.jpg" alt="Affidavit"></div>
+    <div class="card-label"><a href="templates.html#affidavit" style="color:inherit;text-decoration:none;">Affidavit</a></div>
+    <div class="card-meta">34 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">18</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:61.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/after_visit_summary.jpg" data-gt="assets/gallery/after_visit_summary_overlay.jpg" data-structural="assets/gallery/after_visit_summary_structural.jpg" data-pred="assets/gallery/after_visit_summary_prediction.jpg" data-gt-meta="11 standard entities" data-structural-meta="26 structural regions" data-pred-meta="19 hit, 0 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/after_visit_summary.jpg" alt="After Visit Summary"></div>
+    <div class="card-label"><a href="templates.html#after_visit_summary" style="color:inherit;text-decoration:none;">After Visit Summary</a></div>
+    <div class="card-meta">37 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">19</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">5</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">19</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">0</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">100%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:100.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:0.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/aia_construction_pay_app.jpg" data-gt="assets/gallery/aia_construction_pay_app_overlay.jpg" data-structural="assets/gallery/aia_construction_pay_app_structural.jpg" data-pred="assets/gallery/aia_construction_pay_app_prediction.jpg" data-gt-meta="75 standard entities" data-structural-meta="159 structural regions" data-pred-meta="0 hit, 75 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/aia_construction_pay_app.jpg" alt="AIA Construction Pay App"></div>
+    <div class="card-label"><a href="templates.html#aia_construction_pay_app" style="color:inherit;text-decoration:none;">AIA Construction Pay App</a></div>
+    <div class="card-meta">234 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">75</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">0</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">75</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">0%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:0.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:100.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/aia_g702_g703.jpg" data-gt="assets/gallery/aia_g702_g703_overlay.jpg" data-structural="assets/gallery/aia_g702_g703_structural.jpg" data-pred="assets/gallery/aia_g702_g703_prediction.jpg" data-gt-meta="29 standard entities" data-structural-meta="43 structural regions" data-pred-meta="25 hit, 70 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/aia_g702_g703.jpg" alt="AIA G702/G703"></div>
+    <div class="card-label"><a href="templates.html#aia_g702_g703" style="color:inherit;text-decoration:none;">AIA G702/G703</a></div>
+    <div class="card-meta">72 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">95</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">25</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">70</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">42%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:26.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:73.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/auto_loan_application.jpg" data-gt="assets/gallery/auto_loan_application_overlay.jpg" data-structural="assets/gallery/auto_loan_application_structural.jpg" data-pred="assets/gallery/auto_loan_application_prediction.jpg" data-gt-meta="18 standard entities" data-structural-meta="28 structural regions" data-pred-meta="33 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/auto_loan_application.jpg" alt="Auto Loan Application"></div>
+    <div class="card-label"><a href="templates.html#auto_loan_application" style="color:inherit;text-decoration:none;">Auto Loan Application</a></div>
+    <div class="card-meta">46 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">40</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">33</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:82.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:17.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/bank_statement.jpg" data-gt="assets/gallery/bank_statement_overlay.jpg" data-structural="assets/gallery/bank_statement_structural.jpg" data-pred="assets/gallery/bank_statement_prediction.jpg" data-gt-meta="60 standard entities" data-structural-meta="76 structural regions" data-pred-meta="20 hit, 40 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/bank_statement.jpg" alt="Bank Statement"></div>
+    <div class="card-label"><a href="templates.html#bank_statement" style="color:inherit;text-decoration:none;">Bank Statement</a></div>
+    <div class="card-meta">136 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">60</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">40</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">50%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:33.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:66.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/bill_of_materials.jpg" data-gt="assets/gallery/bill_of_materials_overlay.jpg" data-structural="assets/gallery/bill_of_materials_structural.jpg" data-pred="assets/gallery/bill_of_materials_prediction.jpg" data-gt-meta="52 standard entities" data-structural-meta="174 structural regions" data-pred-meta="31 hit, 27 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/bill_of_materials.jpg" alt="Bill Of Materials"></div>
+    <div class="card-label"><a href="templates.html#bill_of_materials" style="color:inherit;text-decoration:none;">Bill Of Materials</a></div>
+    <div class="card-meta">226 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">58</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">31</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">27</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">70%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:53.4%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:46.6%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/birth_certificate.jpg" data-gt="assets/gallery/birth_certificate_overlay.jpg" data-structural="assets/gallery/birth_certificate_structural.jpg" data-pred="assets/gallery/birth_certificate_prediction.jpg" data-gt-meta="19 standard entities" data-structural-meta="40 structural regions" data-pred-meta="10 hit, 9 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/birth_certificate.jpg" alt="Birth Certificate"></div>
+    <div class="card-label"><a href="templates.html#birth_certificate" style="color:inherit;text-decoration:none;">Birth Certificate</a></div>
+    <div class="card-meta">59 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">19</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">69%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:52.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:47.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/blueprint_technical_drawing.jpg" data-gt="assets/gallery/blueprint_technical_drawing_overlay.jpg" data-structural="assets/gallery/blueprint_technical_drawing_structural.jpg" data-pred="assets/gallery/blueprint_technical_drawing_prediction.jpg" data-gt-meta="29 standard entities" data-structural-meta="85 structural regions" data-pred-meta="20 hit, 9 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/blueprint_technical_drawing.jpg" alt="Blueprint Technical Drawing"></div>
+    <div class="card-label"><a href="templates.html#blueprint_technical_drawing" style="color:inherit;text-decoration:none;">Blueprint Technical Drawing</a></div>
+    <div class="card-meta">114 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">29</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:69.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:31.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/building_permit.jpg" data-gt="assets/gallery/building_permit_overlay.jpg" data-structural="assets/gallery/building_permit_structural.jpg" data-pred="assets/gallery/building_permit_prediction.jpg" data-gt-meta="15 standard entities" data-structural-meta="38 structural regions" data-pred-meta="25 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/building_permit.jpg" alt="Building Permit"></div>
+    <div class="card-label"><a href="templates.html#building_permit" style="color:inherit;text-decoration:none;">Building Permit</a></div>
+    <div class="card-meta">53 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">27</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">25</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">96%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:92.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:7.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/business_card.jpg" data-gt="assets/gallery/business_card_overlay.jpg" data-structural="assets/gallery/business_card_structural.jpg" data-pred="assets/gallery/business_card_prediction.jpg" data-gt-meta="7 standard entities" data-structural-meta="6 structural regions" data-pred-meta="4 hit, 3 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/business_card.jpg" alt="Business Card"></div>
+    <div class="card-label"><a href="templates.html#business_card" style="color:inherit;text-decoration:none;">Business Card</a></div>
+    <div class="card-meta">13 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">7</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">4</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">73%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:57.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:42.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/certificate.jpg" data-gt="assets/gallery/certificate_overlay.jpg" data-structural="assets/gallery/certificate_structural.jpg" data-pred="assets/gallery/certificate_prediction.jpg" data-gt-meta="5 standard entities" data-structural-meta="8 structural regions" data-pred-meta="5 hit, 0 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/certificate.jpg" alt="Certificate"></div>
+    <div class="card-label"><a href="templates.html#certificate" style="color:inherit;text-decoration:none;">Certificate</a></div>
+    <div class="card-meta">13 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">5</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">5</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">0</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">100%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:100.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:0.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/certificate_of_analysis.jpg" data-gt="assets/gallery/certificate_of_analysis_overlay.jpg" data-structural="assets/gallery/certificate_of_analysis_structural.jpg" data-pred="assets/gallery/certificate_of_analysis_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="63 structural regions" data-pred-meta="16 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/certificate_of_analysis.jpg" alt="Certificate Of Analysis"></div>
+    <div class="card-label"><a href="templates.html#certificate_of_analysis" style="color:inherit;text-decoration:none;">Certificate Of Analysis</a></div>
+    <div class="card-meta">76 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">20</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">89%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:80.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:20.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/change_order.jpg" data-gt="assets/gallery/change_order_overlay.jpg" data-structural="assets/gallery/change_order_structural.jpg" data-pred="assets/gallery/change_order_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="27 structural regions" data-pred-meta="23 hit, 18 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/change_order.jpg" alt="Change Order"></div>
+    <div class="card-label"><a href="templates.html#change_order" style="color:inherit;text-decoration:none;">Change Order</a></div>
+    <div class="card-meta">37 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">41</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">23</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">18</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">72%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:56.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:43.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/closing_disclosure.jpg" data-gt="assets/gallery/closing_disclosure_overlay.jpg" data-structural="assets/gallery/closing_disclosure_structural.jpg" data-pred="assets/gallery/closing_disclosure_prediction.jpg" data-gt-meta="45 standard entities" data-structural-meta="97 structural regions" data-pred-meta="14 hit, 47 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/closing_disclosure.jpg" alt="Closing Disclosure"></div>
+    <div class="card-label"><a href="templates.html#closing_disclosure" style="color:inherit;text-decoration:none;">Closing Disclosure</a></div>
+    <div class="card-meta">142 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">61</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">47</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">37%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:23.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:77.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/cms1500.jpg" data-gt="assets/gallery/cms1500_overlay.jpg" data-structural="assets/gallery/cms1500_structural.jpg" data-pred="assets/gallery/cms1500_prediction.jpg" data-gt-meta="33 standard entities" data-structural-meta="96 structural regions" data-pred-meta="23 hit, 10 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/cms1500.jpg" alt="CMS-1500"></div>
+    <div class="card-label"><a href="templates.html#cms1500" style="color:inherit;text-decoration:none;">CMS-1500</a></div>
+    <div class="card-meta">129 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">33</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">23</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:69.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.3%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/cms485_home_health.jpg" data-gt="assets/gallery/cms485_home_health_overlay.jpg" data-structural="assets/gallery/cms485_home_health_structural.jpg" data-pred="assets/gallery/cms485_home_health_prediction.jpg" data-gt-meta="14 standard entities" data-structural-meta="38 structural regions" data-pred-meta="18 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/cms485_home_health.jpg" alt="CMS-485 Home Health"></div>
+    <div class="card-label"><a href="templates.html#cms485_home_health" style="color:inherit;text-decoration:none;">CMS-485 Home Health</a></div>
+    <div class="card-meta">52 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">25</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">18</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">84%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:72.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:28.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/commercial_invoice.jpg" data-gt="assets/gallery/commercial_invoice_overlay.jpg" data-structural="assets/gallery/commercial_invoice_structural.jpg" data-pred="assets/gallery/commercial_invoice_prediction.jpg" data-gt-meta="39 standard entities" data-structural-meta="57 structural regions" data-pred-meta="25 hit, 14 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/commercial_invoice.jpg" alt="Commercial Invoice"></div>
+    <div class="card-label"><a href="templates.html#commercial_invoice" style="color:inherit;text-decoration:none;">Commercial Invoice</a></div>
+    <div class="card-meta">96 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">39</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">25</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">14</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">78%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:64.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:35.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/commercial_rent_roll.jpg" data-gt="assets/gallery/commercial_rent_roll_overlay.jpg" data-structural="assets/gallery/commercial_rent_roll_structural.jpg" data-pred="assets/gallery/commercial_rent_roll_prediction.jpg" data-gt-meta="48 standard entities" data-structural-meta="79 structural regions" data-pred-meta="23 hit, 31 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/commercial_rent_roll.jpg" alt="Commercial Rent Roll"></div>
+    <div class="card-label"><a href="templates.html#commercial_rent_roll" style="color:inherit;text-decoration:none;">Commercial Rent Roll</a></div>
+    <div class="card-meta">127 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">54</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">23</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">31</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">60%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:42.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:57.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/court_order.jpg" data-gt="assets/gallery/court_order_overlay.jpg" data-structural="assets/gallery/court_order_structural.jpg" data-pred="assets/gallery/court_order_prediction.jpg" data-gt-meta="9 standard entities" data-structural-meta="9 structural regions" data-pred-meta="12 hit, 8 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/court_order.jpg" alt="Court Order"></div>
+    <div class="card-label"><a href="templates.html#court_order" style="color:inherit;text-decoration:none;">Court Order</a></div>
+    <div class="card-meta">18 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">20</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">75%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:60.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:40.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/credit_card_statement.jpg" data-gt="assets/gallery/credit_card_statement_overlay.jpg" data-structural="assets/gallery/credit_card_statement_structural.jpg" data-pred="assets/gallery/credit_card_statement_prediction.jpg" data-gt-meta="63 standard entities" data-structural-meta="89 structural regions" data-pred-meta="30 hit, 38 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/credit_card_statement.jpg" alt="Credit Card Statement"></div>
+    <div class="card-label"><a href="templates.html#credit_card_statement" style="color:inherit;text-decoration:none;">Credit Card Statement</a></div>
+    <div class="card-meta">152 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">68</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">30</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">38</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">61%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:44.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:55.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/delivery_note.jpg" data-gt="assets/gallery/delivery_note_overlay.jpg" data-structural="assets/gallery/delivery_note_structural.jpg" data-pred="assets/gallery/delivery_note_prediction.jpg" data-gt-meta="29 standard entities" data-structural-meta="73 structural regions" data-pred-meta="10 hit, 19 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/delivery_note.jpg" alt="Delivery Note"></div>
+    <div class="card-label"><a href="templates.html#delivery_note" style="color:inherit;text-decoration:none;">Delivery Note</a></div>
+    <div class="card-meta">102 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">29</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">19</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">51%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:34.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:65.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/diploma.jpg" data-gt="assets/gallery/diploma_overlay.jpg" data-structural="assets/gallery/diploma_structural.jpg" data-pred="assets/gallery/diploma_prediction.jpg" data-gt-meta="7 standard entities" data-structural-meta="8 structural regions" data-pred-meta="1 hit, 6 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/diploma.jpg" alt="Diploma"></div>
+    <div class="card-label"><a href="templates.html#diploma" style="color:inherit;text-decoration:none;">Diploma</a></div>
+    <div class="card-meta">15 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">7</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">1</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">25%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:14.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:85.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/donation_receipt.jpg" data-gt="assets/gallery/donation_receipt_overlay.jpg" data-structural="assets/gallery/donation_receipt_structural.jpg" data-pred="assets/gallery/donation_receipt_prediction.jpg" data-gt-meta="17 standard entities" data-structural-meta="37 structural regions" data-pred-meta="16 hit, 5 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/donation_receipt.jpg" alt="Donation Receipt"></div>
+    <div class="card-label"><a href="templates.html#donation_receipt" style="color:inherit;text-decoration:none;">Donation Receipt</a></div>
+    <div class="card-meta">54 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">21</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">86%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:76.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:23.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/driver_license.jpg" data-gt="assets/gallery/driver_license_overlay.jpg" data-structural="assets/gallery/driver_license_structural.jpg" data-pred="assets/gallery/driver_license_prediction.jpg" data-gt-meta="8 standard entities" data-structural-meta="19 structural regions" data-pred-meta="6 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/driver_license.jpg" alt="Driver License"></div>
+    <div class="card-label"><a href="templates.html#driver_license" style="color:inherit;text-decoration:none;">Driver License</a></div>
+    <div class="card-meta">27 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">8</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">6</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">86%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:75.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:25.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/employment_agreement.jpg" data-gt="assets/gallery/employment_agreement_overlay.jpg" data-structural="assets/gallery/employment_agreement_structural.jpg" data-pred="assets/gallery/employment_agreement_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="21 structural regions" data-pred-meta="11 hit, 8 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/employment_agreement.jpg" alt="Employment Agreement"></div>
+    <div class="card-label"><a href="templates.html#employment_agreement" style="color:inherit;text-decoration:none;">Employment Agreement</a></div>
+    <div class="card-meta">31 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">19</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">73%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:57.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:42.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/event_ticket.jpg" data-gt="assets/gallery/event_ticket_overlay.jpg" data-structural="assets/gallery/event_ticket_structural.jpg" data-pred="assets/gallery/event_ticket_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="32 structural regions" data-pred-meta="9 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/event_ticket.jpg" alt="Event Ticket"></div>
+    <div class="card-label"><a href="templates.html#event_ticket" style="color:inherit;text-decoration:none;">Event Ticket</a></div>
+    <div class="card-meta">45 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">13</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:69.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/explanation_of_benefits.jpg" data-gt="assets/gallery/explanation_of_benefits_overlay.jpg" data-structural="assets/gallery/explanation_of_benefits_structural.jpg" data-pred="assets/gallery/explanation_of_benefits_prediction.jpg" data-gt-meta="45 standard entities" data-structural-meta="74 structural regions" data-pred-meta="36 hit, 13 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/explanation_of_benefits.jpg" alt="Explanation Of Benefits"></div>
+    <div class="card-label"><a href="templates.html#explanation_of_benefits" style="color:inherit;text-decoration:none;">Explanation Of Benefits</a></div>
+    <div class="card-meta">119 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">49</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">36</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">13</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">85%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:73.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:26.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/fax_cover_sheet.jpg" data-gt="assets/gallery/fax_cover_sheet_overlay.jpg" data-structural="assets/gallery/fax_cover_sheet_structural.jpg" data-pred="assets/gallery/fax_cover_sheet_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="34 structural regions" data-pred-meta="9 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/fax_cover_sheet.jpg" alt="Fax Cover Sheet"></div>
+    <div class="card-label"><a href="templates.html#fax_cover_sheet" style="color:inherit;text-decoration:none;">Fax Cover Sheet</a></div>
+    <div class="card-meta">44 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">11</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:81.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:18.2%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/flight_itinerary.jpg" data-gt="assets/gallery/flight_itinerary_overlay.jpg" data-structural="assets/gallery/flight_itinerary_structural.jpg" data-pred="assets/gallery/flight_itinerary_prediction.jpg" data-gt-meta="12 standard entities" data-structural-meta="45 structural regions" data-pred-meta="7 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/flight_itinerary.jpg" alt="Flight Itinerary"></div>
+    <div class="card-label"><a href="templates.html#flight_itinerary" style="color:inherit;text-decoration:none;">Flight Itinerary</a></div>
+    <div class="card-meta">57 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">14</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:50.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:50.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/home_inspection_report.jpg" data-gt="assets/gallery/home_inspection_report_overlay.jpg" data-structural="assets/gallery/home_inspection_report_structural.jpg" data-pred="assets/gallery/home_inspection_report_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="29 structural regions" data-pred-meta="13 hit, 3 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/home_inspection_report.jpg" alt="Home Inspection Report"></div>
+    <div class="card-label"><a href="templates.html#home_inspection_report" style="color:inherit;text-decoration:none;">Home Inspection Report</a></div>
+    <div class="card-meta">42 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">16</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:81.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:18.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/i9_form.jpg" data-gt="assets/gallery/i9_form_overlay.jpg" data-structural="assets/gallery/i9_form_structural.jpg" data-pred="assets/gallery/i9_form_prediction.jpg" data-gt-meta="15 standard entities" data-structural-meta="21 structural regions" data-pred-meta="21 hit, 9 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/i9_form.jpg" alt="I-9 Form"></div>
+    <div class="card-label"><a href="templates.html#i9_form" style="color:inherit;text-decoration:none;">I-9 Form</a></div>
+    <div class="card-meta">36 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">30</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">21</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:70.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/insurance_claim.jpg" data-gt="assets/gallery/insurance_claim_overlay.jpg" data-structural="assets/gallery/insurance_claim_structural.jpg" data-pred="assets/gallery/insurance_claim_prediction.jpg" data-gt-meta="19 standard entities" data-structural-meta="27 structural regions" data-pred-meta="20 hit, 9 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/insurance_claim.jpg" alt="Insurance Claim"></div>
+    <div class="card-label"><a href="templates.html#insurance_claim" style="color:inherit;text-decoration:none;">Insurance Claim</a></div>
+    <div class="card-meta">46 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">29</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:69.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:31.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/insurance_claim_form.jpg" data-gt="assets/gallery/insurance_claim_form_overlay.jpg" data-structural="assets/gallery/insurance_claim_form_structural.jpg" data-pred="assets/gallery/insurance_claim_form_prediction.jpg" data-gt-meta="16 standard entities" data-structural-meta="28 structural regions" data-pred-meta="20 hit, 6 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/insurance_claim_form.jpg" alt="Insurance Claim Form"></div>
+    <div class="card-label"><a href="templates.html#insurance_claim_form" style="color:inherit;text-decoration:none;">Insurance Claim Form</a></div>
+    <div class="card-meta">44 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">26</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">87%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:76.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:23.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/insurance_policy.jpg" data-gt="assets/gallery/insurance_policy_overlay.jpg" data-structural="assets/gallery/insurance_policy_structural.jpg" data-pred="assets/gallery/insurance_policy_prediction.jpg" data-gt-meta="15 standard entities" data-structural-meta="23 structural regions" data-pred-meta="30 hit, 3 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/insurance_policy.jpg" alt="Insurance Policy"></div>
+    <div class="card-label"><a href="templates.html#insurance_policy" style="color:inherit;text-decoration:none;">Insurance Policy</a></div>
+    <div class="card-meta">38 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">33</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">30</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:90.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:9.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/insurance_quote.jpg" data-gt="assets/gallery/insurance_quote_overlay.jpg" data-structural="assets/gallery/insurance_quote_structural.jpg" data-pred="assets/gallery/insurance_quote_prediction.jpg" data-gt-meta="14 standard entities" data-structural-meta="34 structural regions" data-pred-meta="22 hit, 3 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/insurance_quote.jpg" alt="Insurance Quote"></div>
+    <div class="card-label"><a href="templates.html#insurance_quote" style="color:inherit;text-decoration:none;">Insurance Quote</a></div>
+    <div class="card-meta">48 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">25</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">94%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:88.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:12.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/invoice.jpg" data-gt="assets/gallery/invoice_overlay.jpg" data-structural="assets/gallery/invoice_structural.jpg" data-pred="assets/gallery/invoice_prediction.jpg" data-gt-meta="23 standard entities" data-structural-meta="38 structural regions" data-pred-meta="12 hit, 14 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/invoice.jpg" alt="Invoice"></div>
+    <div class="card-label"><a href="templates.html#invoice" style="color:inherit;text-decoration:none;">Invoice</a></div>
+    <div class="card-meta">61 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">26</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">14</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">63%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:46.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:53.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/irs_form.jpg" data-gt="assets/gallery/irs_form_overlay.jpg" data-structural="assets/gallery/irs_form_structural.jpg" data-pred="assets/gallery/irs_form_prediction.jpg" data-gt-meta="18 standard entities" data-structural-meta="43 structural regions" data-pred-meta="22 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/irs_form.jpg" alt="IRS Form"></div>
+    <div class="card-label"><a href="templates.html#irs_form" style="color:inherit;text-decoration:none;">IRS Form</a></div>
+    <div class="card-meta">61 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">24</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">96%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:91.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:8.3%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/irs_form_1040.jpg" data-gt="assets/gallery/irs_form_1040_overlay.jpg" data-structural="assets/gallery/irs_form_1040_structural.jpg" data-pred="assets/gallery/irs_form_1040_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="43 structural regions" data-pred-meta="11 hit, 15 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/irs_form_1040.jpg" alt="IRS Form 1040"></div>
+    <div class="card-label"><a href="templates.html#irs_form_1040" style="color:inherit;text-decoration:none;">IRS Form 1040</a></div>
+    <div class="card-meta">56 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">26</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">15</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">59%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:42.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:57.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/irs_tax_transcript.jpg" data-gt="assets/gallery/irs_tax_transcript_overlay.jpg" data-structural="assets/gallery/irs_tax_transcript_structural.jpg" data-pred="assets/gallery/irs_tax_transcript_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="40 structural regions" data-pred-meta="14 hit, 17 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/irs_tax_transcript.jpg" alt="IRS Tax Transcript"></div>
+    <div class="card-label"><a href="templates.html#irs_tax_transcript" style="color:inherit;text-decoration:none;">IRS Tax Transcript</a></div>
+    <div class="card-meta">53 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">31</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">17</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">62%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:45.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:54.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/irs_transcript.jpg" data-gt="assets/gallery/irs_transcript_overlay.jpg" data-structural="assets/gallery/irs_transcript_structural.jpg" data-pred="assets/gallery/irs_transcript_prediction.jpg" data-gt-meta="19 standard entities" data-structural-meta="39 structural regions" data-pred-meta="14 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/irs_transcript.jpg" alt="IRS Transcript"></div>
+    <div class="card-label"><a href="templates.html#irs_transcript" style="color:inherit;text-decoration:none;">IRS Transcript</a></div>
+    <div class="card-meta">58 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">21</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">80%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:66.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:33.3%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/lab_report.jpg" data-gt="assets/gallery/lab_report_overlay.jpg" data-structural="assets/gallery/lab_report_structural.jpg" data-pred="assets/gallery/lab_report_prediction.jpg" data-gt-meta="25 standard entities" data-structural-meta="98 structural regions" data-pred-meta="13 hit, 12 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/lab_report.jpg" alt="Lab Report"></div>
+    <div class="card-label"><a href="templates.html#lab_report" style="color:inherit;text-decoration:none;">Lab Report</a></div>
+    <div class="card-meta">123 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">25</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">12</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:52.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/layout_example.jpg" data-gt="assets/gallery/layout_example_overlay.jpg" data-structural="assets/gallery/layout_example_structural.jpg" data-pred="assets/gallery/layout_example_prediction.jpg" data-gt-meta="3 standard entities" data-structural-meta="14 structural regions" data-pred-meta="2 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/layout_example.jpg" alt="Layout Example"></div>
+    <div class="card-label"><a href="templates.html#layout_example" style="color:inherit;text-decoration:none;">Layout Example</a></div>
+    <div class="card-meta">17 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">2</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:50.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:50.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/lease_agreement.jpg" data-gt="assets/gallery/lease_agreement_overlay.jpg" data-structural="assets/gallery/lease_agreement_structural.jpg" data-pred="assets/gallery/lease_agreement_prediction.jpg" data-gt-meta="12 standard entities" data-structural-meta="26 structural regions" data-pred-meta="14 hit, 5 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/lease_agreement.jpg" alt="Lease Agreement"></div>
+    <div class="card-label"><a href="templates.html#lease_agreement" style="color:inherit;text-decoration:none;">Lease Agreement</a></div>
+    <div class="card-meta">38 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">19</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">85%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:73.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:26.3%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/legal_pleading.jpg" data-gt="assets/gallery/legal_pleading_overlay.jpg" data-structural="assets/gallery/legal_pleading_structural.jpg" data-pred="assets/gallery/legal_pleading_prediction.jpg" data-gt-meta="15 standard entities" data-structural-meta="18 structural regions" data-pred-meta="12 hit, 10 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/legal_pleading.jpg" alt="Legal Pleading"></div>
+    <div class="card-label"><a href="templates.html#legal_pleading" style="color:inherit;text-decoration:none;">Legal Pleading</a></div>
+    <div class="card-meta">33 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">22</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:54.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:45.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/loan_agreement.jpg" data-gt="assets/gallery/loan_agreement_overlay.jpg" data-structural="assets/gallery/loan_agreement_structural.jpg" data-pred="assets/gallery/loan_agreement_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="22 structural regions" data-pred-meta="14 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/loan_agreement.jpg" alt="Loan Agreement"></div>
+    <div class="card-label"><a href="templates.html#loan_agreement" style="color:inherit;text-decoration:none;">Loan Agreement</a></div>
+    <div class="card-meta">35 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">18</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">5</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">88%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:77.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:22.2%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/medical_intake_form.jpg" data-gt="assets/gallery/medical_intake_form_overlay.jpg" data-structural="assets/gallery/medical_intake_form_structural.jpg" data-pred="assets/gallery/medical_intake_form_prediction.jpg" data-gt-meta="18 standard entities" data-structural-meta="34 structural regions" data-pred-meta="16 hit, 6 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/medical_intake_form.jpg" alt="Medical Intake Form"></div>
+    <div class="card-label"><a href="templates.html#medical_intake_form" style="color:inherit;text-decoration:none;">Medical Intake Form</a></div>
+    <div class="card-meta">52 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">22</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">84%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:72.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:27.3%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/medical_prescription.jpg" data-gt="assets/gallery/medical_prescription_overlay.jpg" data-structural="assets/gallery/medical_prescription_structural.jpg" data-pred="assets/gallery/medical_prescription_prediction.jpg" data-gt-meta="22 standard entities" data-structural-meta="60 structural regions" data-pred-meta="19 hit, 3 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/medical_prescription.jpg" alt="Medical Prescription"></div>
+    <div class="card-label"><a href="templates.html#medical_prescription" style="color:inherit;text-decoration:none;">Medical Prescription</a></div>
+    <div class="card-meta">82 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">22</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">19</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">93%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:86.4%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:13.6%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/medical_report.jpg" data-gt="assets/gallery/medical_report_overlay.jpg" data-structural="assets/gallery/medical_report_structural.jpg" data-pred="assets/gallery/medical_report_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="23 structural regions" data-pred-meta="10 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/medical_report.jpg" alt="Medical Report"></div>
+    <div class="card-label"><a href="templates.html#medical_report" style="color:inherit;text-decoration:none;">Medical Report</a></div>
+    <div class="card-meta">33 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">12</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">91%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:83.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:16.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/meeting_minutes.jpg" data-gt="assets/gallery/meeting_minutes_overlay.jpg" data-structural="assets/gallery/meeting_minutes_structural.jpg" data-pred="assets/gallery/meeting_minutes_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="56 structural regions" data-pred-meta="28 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/meeting_minutes.jpg" alt="Meeting Minutes"></div>
+    <div class="card-label"><a href="templates.html#meeting_minutes" style="color:inherit;text-decoration:none;">Meeting Minutes</a></div>
+    <div class="card-meta">69 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">30</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">28</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">97%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:93.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:6.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/membership_card.jpg" data-gt="assets/gallery/membership_card_overlay.jpg" data-structural="assets/gallery/membership_card_structural.jpg" data-pred="assets/gallery/membership_card_prediction.jpg" data-gt-meta="5 standard entities" data-structural-meta="8 structural regions" data-pred-meta="0 hit, 5 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/membership_card.jpg" alt="Membership Card"></div>
+    <div class="card-label"><a href="templates.html#membership_card" style="color:inherit;text-decoration:none;">Membership Card</a></div>
+    <div class="card-meta">13 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">5</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">0</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">0%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:0.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:100.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/msds.jpg" data-gt="assets/gallery/msds_overlay.jpg" data-structural="assets/gallery/msds_structural.jpg" data-pred="assets/gallery/msds_prediction.jpg" data-gt-meta="7 standard entities" data-structural-meta="27 structural regions" data-pred-meta="8 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/msds.jpg" alt="MSDS"></div>
+    <div class="card-label"><a href="templates.html#msds" style="color:inherit;text-decoration:none;">MSDS</a></div>
+    <div class="card-meta">34 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">12</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">8</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">8</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">80%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:66.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:33.3%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/nda.jpg" data-gt="assets/gallery/nda_overlay.jpg" data-structural="assets/gallery/nda_structural.jpg" data-pred="assets/gallery/nda_prediction.jpg" data-gt-meta="7 standard entities" data-structural-meta="23 structural regions" data-pred-meta="4 hit, 9 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/nda.jpg" alt="NDA"></div>
+    <div class="card-label"><a href="templates.html#nda" style="color:inherit;text-decoration:none;">NDA</a></div>
+    <div class="card-meta">30 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">13</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">4</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">47%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:30.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:69.2%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/order_confirmation.jpg" data-gt="assets/gallery/order_confirmation_overlay.jpg" data-structural="assets/gallery/order_confirmation_structural.jpg" data-pred="assets/gallery/order_confirmation_prediction.jpg" data-gt-meta="37 standard entities" data-structural-meta="74 structural regions" data-pred-meta="22 hit, 22 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/order_confirmation.jpg" alt="Order Confirmation"></div>
+    <div class="card-label"><a href="templates.html#order_confirmation" style="color:inherit;text-decoration:none;">Order Confirmation</a></div>
+    <div class="card-meta">111 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">44</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">22</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:50.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:50.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/parking_ticket.jpg" data-gt="assets/gallery/parking_ticket_overlay.jpg" data-structural="assets/gallery/parking_ticket_structural.jpg" data-pred="assets/gallery/parking_ticket_prediction.jpg" data-gt-meta="11 standard entities" data-structural-meta="36 structural regions" data-pred-meta="9 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/parking_ticket.jpg" alt="Parking Ticket"></div>
+    <div class="card-label"><a href="templates.html#parking_ticket" style="color:inherit;text-decoration:none;">Parking Ticket</a></div>
+    <div class="card-meta">47 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">16</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">72%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:56.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:43.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/passport.jpg" data-gt="assets/gallery/passport_overlay.jpg" data-structural="assets/gallery/passport_structural.jpg" data-pred="assets/gallery/passport_prediction.jpg" data-gt-meta="11 standard entities" data-structural-meta="15 structural regions" data-pred-meta="7 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/passport.jpg" alt="Passport"></div>
+    <div class="card-label"><a href="templates.html#passport" style="color:inherit;text-decoration:none;">Passport</a></div>
+    <div class="card-meta">26 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">11</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">78%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:63.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:36.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/patent.jpg" data-gt="assets/gallery/patent_overlay.jpg" data-structural="assets/gallery/patent_structural.jpg" data-pred="assets/gallery/patent_prediction.jpg" data-gt-meta="32 standard entities" data-structural-meta="24 structural regions" data-pred-meta="15 hit, 46 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/patent.jpg" alt="Patent"></div>
+    <div class="card-label"><a href="templates.html#patent" style="color:inherit;text-decoration:none;">Patent</a></div>
+    <div class="card-meta">56 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">61</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">15</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">46</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">39%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:24.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:75.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/patent_application.jpg" data-gt="assets/gallery/patent_application_overlay.jpg" data-structural="assets/gallery/patent_application_structural.jpg" data-pred="assets/gallery/patent_application_prediction.jpg" data-gt-meta="9 standard entities" data-structural-meta="21 structural regions" data-pred-meta="16 hit, 15 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/patent_application.jpg" alt="Patent Application"></div>
+    <div class="card-label"><a href="templates.html#patent_application" style="color:inherit;text-decoration:none;">Patent Application</a></div>
+    <div class="card-meta">30 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">31</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">6</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">15</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:51.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/pay_stub.jpg" data-gt="assets/gallery/pay_stub_overlay.jpg" data-structural="assets/gallery/pay_stub_structural.jpg" data-pred="assets/gallery/pay_stub_prediction.jpg" data-gt-meta="32 standard entities" data-structural-meta="66 structural regions" data-pred-meta="29 hit, 3 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/pay_stub.jpg" alt="Pay Stub"></div>
+    <div class="card-label"><a href="templates.html#pay_stub" style="color:inherit;text-decoration:none;">Pay Stub</a></div>
+    <div class="card-meta">98 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">32</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">29</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:90.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:9.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/payroll_slip.jpg" data-gt="assets/gallery/payroll_slip_overlay.jpg" data-structural="assets/gallery/payroll_slip_structural.jpg" data-pred="assets/gallery/payroll_slip_prediction.jpg" data-gt-meta="38 standard entities" data-structural-meta="76 structural regions" data-pred-meta="20 hit, 19 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/payroll_slip.jpg" alt="Payroll Slip"></div>
+    <div class="card-label"><a href="templates.html#payroll_slip" style="color:inherit;text-decoration:none;">Payroll Slip</a></div>
+    <div class="card-meta">114 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">39</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">19</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:51.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/police_crash_report.jpg" data-gt="assets/gallery/police_crash_report_overlay.jpg" data-structural="assets/gallery/police_crash_report_structural.jpg" data-pred="assets/gallery/police_crash_report_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="38 structural regions" data-pred-meta="18 hit, 8 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/police_crash_report.jpg" alt="Police Crash Report"></div>
+    <div class="card-label"><a href="templates.html#police_crash_report" style="color:inherit;text-decoration:none;">Police Crash Report</a></div>
+    <div class="card-meta">51 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">26</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">18</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:69.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/power_of_attorney.jpg" data-gt="assets/gallery/power_of_attorney_overlay.jpg" data-structural="assets/gallery/power_of_attorney_structural.jpg" data-pred="assets/gallery/power_of_attorney_prediction.jpg" data-gt-meta="8 standard entities" data-structural-meta="16 structural regions" data-pred-meta="15 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/power_of_attorney.jpg" alt="Power Of Attorney"></div>
+    <div class="card-label"><a href="templates.html#power_of_attorney" style="color:inherit;text-decoration:none;">Power Of Attorney</a></div>
+    <div class="card-meta">24 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">22</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">15</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">81%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:68.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:31.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/prescription.jpg" data-gt="assets/gallery/prescription_overlay.jpg" data-structural="assets/gallery/prescription_structural.jpg" data-pred="assets/gallery/prescription_prediction.jpg" data-gt-meta="14 standard entities" data-structural-meta="24 structural regions" data-pred-meta="10 hit, 8 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/prescription.jpg" alt="Prescription"></div>
+    <div class="card-label"><a href="templates.html#prescription" style="color:inherit;text-decoration:none;">Prescription</a></div>
+    <div class="card-meta">38 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">18</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:55.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:44.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/promissory_note.jpg" data-gt="assets/gallery/promissory_note_overlay.jpg" data-structural="assets/gallery/promissory_note_structural.jpg" data-pred="assets/gallery/promissory_note_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="26 structural regions" data-pred-meta="13 hit, 8 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/promissory_note.jpg" alt="Promissory Note"></div>
+    <div class="card-label"><a href="templates.html#promissory_note" style="color:inherit;text-decoration:none;">Promissory Note</a></div>
+    <div class="card-meta">36 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">21</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:61.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/promo_note.jpg" data-gt="assets/gallery/promo_note_overlay.jpg" data-structural="assets/gallery/promo_note_structural.jpg" data-pred="assets/gallery/promo_note_prediction.jpg" data-gt-meta="12 standard entities" data-structural-meta="17 structural regions" data-pred-meta="12 hit, 5 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/promo_note.jpg" alt="Promo Note"></div>
+    <div class="card-label"><a href="templates.html#promo_note" style="color:inherit;text-decoration:none;">Promo Note</a></div>
+    <div class="card-meta">29 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">17</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">83%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:70.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:29.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/purchase_order.jpg" data-gt="assets/gallery/purchase_order_overlay.jpg" data-structural="assets/gallery/purchase_order_structural.jpg" data-pred="assets/gallery/purchase_order_prediction.jpg" data-gt-meta="31 standard entities" data-structural-meta="49 structural regions" data-pred-meta="28 hit, 6 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/purchase_order.jpg" alt="Purchase Order"></div>
+    <div class="card-label"><a href="templates.html#purchase_order" style="color:inherit;text-decoration:none;">Purchase Order</a></div>
+    <div class="card-meta">80 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">34</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">28</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:82.4%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:17.6%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/referral_order_template.jpg" data-gt="assets/gallery/referral_order_template_overlay.jpg" data-structural="assets/gallery/referral_order_template_structural.jpg" data-pred="assets/gallery/referral_order_template_prediction.jpg" data-gt-meta="22 standard entities" data-structural-meta="26 structural regions" data-pred-meta="13 hit, 12 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/referral_order_template.jpg" alt="Referral Order Template"></div>
+    <div class="card-label"><a href="templates.html#referral_order_template" style="color:inherit;text-decoration:none;">Referral Order Template</a></div>
+    <div class="card-meta">48 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">25</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">12</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:52.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/remittance_advice.jpg" data-gt="assets/gallery/remittance_advice_overlay.jpg" data-structural="assets/gallery/remittance_advice_structural.jpg" data-pred="assets/gallery/remittance_advice_prediction.jpg" data-gt-meta="57 standard entities" data-structural-meta="75 structural regions" data-pred-meta="29 hit, 28 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/remittance_advice.jpg" alt="Remittance Advice"></div>
+    <div class="card-label"><a href="templates.html#remittance_advice" style="color:inherit;text-decoration:none;">Remittance Advice</a></div>
+    <div class="card-meta">132 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">57</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">29</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">28</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:50.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:49.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/rental_agreement.jpg" data-gt="assets/gallery/rental_agreement_overlay.jpg" data-structural="assets/gallery/rental_agreement_structural.jpg" data-pred="assets/gallery/rental_agreement_prediction.jpg" data-gt-meta="12 standard entities" data-structural-meta="22 structural regions" data-pred-meta="16 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/rental_agreement.jpg" alt="Rental Agreement"></div>
+    <div class="card-label"><a href="templates.html#rental_agreement" style="color:inherit;text-decoration:none;">Rental Agreement</a></div>
+    <div class="card-meta">34 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">20</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">89%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:80.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:20.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/restaurant_receipt.jpg" data-gt="assets/gallery/restaurant_receipt_overlay.jpg" data-structural="assets/gallery/restaurant_receipt_structural.jpg" data-pred="assets/gallery/restaurant_receipt_prediction.jpg" data-gt-meta="23 standard entities" data-structural-meta="38 structural regions" data-pred-meta="10 hit, 13 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/restaurant_receipt.jpg" alt="Restaurant Receipt"></div>
+    <div class="card-label"><a href="templates.html#restaurant_receipt" style="color:inherit;text-decoration:none;">Restaurant Receipt</a></div>
+    <div class="card-meta">61 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">23</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">13</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">61%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:43.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:56.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/resume.jpg" data-gt="assets/gallery/resume_overlay.jpg" data-structural="assets/gallery/resume_structural.jpg" data-pred="assets/gallery/resume_prediction.jpg" data-gt-meta="17 standard entities" data-structural-meta="24 structural regions" data-pred-meta="7 hit, 10 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/resume.jpg" alt="Resume"></div>
+    <div class="card-label"><a href="templates.html#resume" style="color:inherit;text-decoration:none;">Resume</a></div>
+    <div class="card-meta">41 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">17</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">58%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:41.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:58.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/schedule_k1.jpg" data-gt="assets/gallery/schedule_k1_overlay.jpg" data-structural="assets/gallery/schedule_k1_structural.jpg" data-pred="assets/gallery/schedule_k1_prediction.jpg" data-gt-meta="36 standard entities" data-structural-meta="48 structural regions" data-pred-meta="2 hit, 34 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/schedule_k1.jpg" alt="Schedule K-1"></div>
+    <div class="card-label"><a href="templates.html#schedule_k1" style="color:inherit;text-decoration:none;">Schedule K-1</a></div>
+    <div class="card-meta">84 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">36</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">2</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">34</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">11%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:5.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:94.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/schedule_k1_1065.jpg" data-gt="assets/gallery/schedule_k1_1065_overlay.jpg" data-structural="assets/gallery/schedule_k1_1065_structural.jpg" data-pred="assets/gallery/schedule_k1_1065_prediction.jpg" data-gt-meta="14 standard entities" data-structural-meta="19 structural regions" data-pred-meta="33 hit, 21 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/schedule_k1_1065.jpg" alt="Schedule K-1 (1065)"></div>
+    <div class="card-label"><a href="templates.html#schedule_k1_1065" style="color:inherit;text-decoration:none;">Schedule K-1 (1065)</a></div>
+    <div class="card-meta">33 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">54</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">33</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">21</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:61.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/service_agreement.jpg" data-gt="assets/gallery/service_agreement_overlay.jpg" data-structural="assets/gallery/service_agreement_structural.jpg" data-pred="assets/gallery/service_agreement_prediction.jpg" data-gt-meta="8 standard entities" data-structural-meta="21 structural regions" data-pred-meta="13 hit, 5 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/service_agreement.jpg" alt="Service Agreement"></div>
+    <div class="card-label"><a href="templates.html#service_agreement" style="color:inherit;text-decoration:none;">Service Agreement</a></div>
+    <div class="card-meta">29 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">18</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">84%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:72.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:27.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/service_level_agreement.jpg" data-gt="assets/gallery/service_level_agreement_overlay.jpg" data-structural="assets/gallery/service_level_agreement_structural.jpg" data-pred="assets/gallery/service_level_agreement_prediction.jpg" data-gt-meta="7 standard entities" data-structural-meta="21 structural regions" data-pred-meta="6 hit, 5 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/service_level_agreement.jpg" alt="Service Level Agreement"></div>
+    <div class="card-label"><a href="templates.html#service_level_agreement" style="color:inherit;text-decoration:none;">Service Level Agreement</a></div>
+    <div class="card-meta">28 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">11</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">6</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:54.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:45.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/shipping_label.jpg" data-gt="assets/gallery/shipping_label_overlay.jpg" data-structural="assets/gallery/shipping_label_structural.jpg" data-pred="assets/gallery/shipping_label_prediction.jpg" data-gt-meta="18 standard entities" data-structural-meta="24 structural regions" data-pred-meta="11 hit, 7 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/shipping_label.jpg" alt="Shipping Label"></div>
+    <div class="card-label"><a href="templates.html#shipping_label" style="color:inherit;text-decoration:none;">Shipping Label</a></div>
+    <div class="card-meta">42 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">18</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:61.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/site_daily_log.jpg" data-gt="assets/gallery/site_daily_log_overlay.jpg" data-structural="assets/gallery/site_daily_log_structural.jpg" data-pred="assets/gallery/site_daily_log_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="26 structural regions" data-pred-meta="29 hit, 17 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/site_daily_log.jpg" alt="Site Daily Log"></div>
+    <div class="card-label"><a href="templates.html#site_daily_log" style="color:inherit;text-decoration:none;">Site Daily Log</a></div>
+    <div class="card-meta">36 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">46</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">29</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">17</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">77%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:63.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:37.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/social_security_card.jpg" data-gt="assets/gallery/social_security_card_overlay.jpg" data-structural="assets/gallery/social_security_card_structural.jpg" data-pred="assets/gallery/social_security_card_prediction.jpg" data-gt-meta="6 standard entities" data-structural-meta="12 structural regions" data-pred-meta="2 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/social_security_card.jpg" alt="Social Security Card"></div>
+    <div class="card-label"><a href="templates.html#social_security_card" style="color:inherit;text-decoration:none;">Social Security Card</a></div>
+    <div class="card-meta">18 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">6</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">2</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">50%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:33.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:66.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/stock_certificate.jpg" data-gt="assets/gallery/stock_certificate_overlay.jpg" data-structural="assets/gallery/stock_certificate_structural.jpg" data-pred="assets/gallery/stock_certificate_prediction.jpg" data-gt-meta="15 standard entities" data-structural-meta="20 structural regions" data-pred-meta="11 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/stock_certificate.jpg" alt="Stock Certificate"></div>
+    <div class="card-label"><a href="templates.html#stock_certificate" style="color:inherit;text-decoration:none;">Stock Certificate</a></div>
+    <div class="card-meta">35 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">15</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">85%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:73.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:26.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/table_example.jpg" data-gt="assets/gallery/table_example_overlay.jpg" data-structural="assets/gallery/table_example_structural.jpg" data-pred="assets/gallery/table_example_prediction.jpg" data-gt-meta="44 standard entities" data-structural-meta="72 structural regions" data-pred-meta="12 hit, 32 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/table_example.jpg" alt="Table Example"></div>
+    <div class="card-label"><a href="templates.html#table_example" style="color:inherit;text-decoration:none;">Table Example</a></div>
+    <div class="card-meta">116 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">44</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">32</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">43%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:27.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:72.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/tax_1099.jpg" data-gt="assets/gallery/tax_1099_overlay.jpg" data-structural="assets/gallery/tax_1099_structural.jpg" data-pred="assets/gallery/tax_1099_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="26 structural regions" data-pred-meta="7 hit, 19 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/tax_1099.jpg" alt="Tax 1099"></div>
+    <div class="card-label"><a href="templates.html#tax_1099" style="color:inherit;text-decoration:none;">Tax 1099</a></div>
+    <div class="card-meta">39 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">26</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">19</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">42%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:26.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:73.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/tax_return.jpg" data-gt="assets/gallery/tax_return_overlay.jpg" data-structural="assets/gallery/tax_return_structural.jpg" data-pred="assets/gallery/tax_return_prediction.jpg" data-gt-meta="7 standard entities" data-structural-meta="31 structural regions" data-pred-meta="24 hit, 2 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/tax_return.jpg" alt="Tax Return"></div>
+    <div class="card-label"><a href="templates.html#tax_return" style="color:inherit;text-decoration:none;">Tax Return</a></div>
+    <div class="card-meta">38 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">26</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">24</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">96%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:92.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:7.7%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/test_showcase.jpg" data-gt="assets/gallery/test_showcase_overlay.jpg" data-structural="assets/gallery/test_showcase_structural.jpg" data-pred="assets/gallery/test_showcase_prediction.jpg" data-gt-meta="6 standard entities" data-structural-meta="13 structural regions" data-pred-meta="96 hit, 78 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/test_showcase.jpg" alt="Test Showcase"></div>
+    <div class="card-label"><a href="templates.html#test_showcase" style="color:inherit;text-decoration:none;">Test Showcase</a></div>
+    <div class="card-meta">19 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">174</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">20</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">96</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">78</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:55.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:44.8%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/timesheet.jpg" data-gt="assets/gallery/timesheet_overlay.jpg" data-structural="assets/gallery/timesheet_structural.jpg" data-pred="assets/gallery/timesheet_prediction.jpg" data-gt-meta="47 standard entities" data-structural-meta="105 structural regions" data-pred-meta="4 hit, 47 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/timesheet.jpg" alt="Timesheet"></div>
+    <div class="card-label"><a href="templates.html#timesheet" style="color:inherit;text-decoration:none;">Timesheet</a></div>
+    <div class="card-meta">152 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">51</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">4</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">47</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">15%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:7.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:92.2%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/trademark_registration.jpg" data-gt="assets/gallery/trademark_registration_overlay.jpg" data-structural="assets/gallery/trademark_registration_structural.jpg" data-pred="assets/gallery/trademark_registration_prediction.jpg" data-gt-meta="9 standard entities" data-structural-meta="35 structural regions" data-pred-meta="12 hit, 9 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/trademark_registration.jpg" alt="Trademark Registration"></div>
+    <div class="card-label"><a href="templates.html#trademark_registration" style="color:inherit;text-decoration:none;">Trademark Registration</a></div>
+    <div class="card-meta">44 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">21</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">73%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:57.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:42.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/ub04_hospital_claims.jpg" data-gt="assets/gallery/ub04_hospital_claims_overlay.jpg" data-structural="assets/gallery/ub04_hospital_claims_structural.jpg" data-pred="assets/gallery/ub04_hospital_claims_prediction.jpg" data-gt-meta="26 standard entities" data-structural-meta="32 structural regions" data-pred-meta="31 hit, 34 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/ub04_hospital_claims.jpg" alt="UB-04 Hospital Claims"></div>
+    <div class="card-label"><a href="templates.html#ub04_hospital_claims" style="color:inherit;text-decoration:none;">UB-04 Hospital Claims</a></div>
+    <div class="card-meta">58 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">65</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">31</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">34</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">65%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:47.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:52.3%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/uspto_document.jpg" data-gt="assets/gallery/uspto_document_overlay.jpg" data-structural="assets/gallery/uspto_document_structural.jpg" data-pred="assets/gallery/uspto_document_prediction.jpg" data-gt-meta="19 standard entities" data-structural-meta="12 structural regions" data-pred-meta="11 hit, 12 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/uspto_document.jpg" alt="USPTO Document"></div>
+    <div class="card-label"><a href="templates.html#uspto_document" style="color:inherit;text-decoration:none;">USPTO Document</a></div>
+    <div class="card-meta">31 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">23</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">12</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">65%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:47.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:52.2%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/utility_bill.jpg" data-gt="assets/gallery/utility_bill_overlay.jpg" data-structural="assets/gallery/utility_bill_structural.jpg" data-pred="assets/gallery/utility_bill_prediction.jpg" data-gt-meta="20 standard entities" data-structural-meta="36 structural regions" data-pred-meta="14 hit, 9 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/utility_bill.jpg" alt="Utility Bill"></div>
+    <div class="card-label"><a href="templates.html#utility_bill" style="color:inherit;text-decoration:none;">Utility Bill</a></div>
+    <div class="card-meta">56 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">23</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:60.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:39.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/vehicle_registration.jpg" data-gt="assets/gallery/vehicle_registration_overlay.jpg" data-structural="assets/gallery/vehicle_registration_structural.jpg" data-pred="assets/gallery/vehicle_registration_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="34 structural regions" data-pred-meta="9 hit, 6 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/vehicle_registration.jpg" alt="Vehicle Registration"></div>
+    <div class="card-label"><a href="templates.html#vehicle_registration" style="color:inherit;text-decoration:none;">Vehicle Registration</a></div>
+    <div class="card-meta">47 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">15</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">75%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:60.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:40.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/visa.jpg" data-gt="assets/gallery/visa_overlay.jpg" data-structural="assets/gallery/visa_structural.jpg" data-pred="assets/gallery/visa_prediction.jpg" data-gt-meta="0 standard entities" data-structural-meta="0 structural regions" data-pred-meta="28 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/visa.jpg" alt="Visa"></div>
+    <div class="card-label"><a href="templates.html#visa" style="color:inherit;text-decoration:none;">Visa</a></div>
+    <div class="card-meta">0 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">32</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">5</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">28</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">93%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:87.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:12.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/voter_registration.jpg" data-gt="assets/gallery/voter_registration_overlay.jpg" data-structural="assets/gallery/voter_registration_structural.jpg" data-pred="assets/gallery/voter_registration_prediction.jpg" data-gt-meta="8 standard entities" data-structural-meta="20 structural regions" data-pred-meta="9 hit, 1 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/voter_registration.jpg" alt="Voter Registration"></div>
+    <div class="card-label"><a href="templates.html#voter_registration" style="color:inherit;text-decoration:none;">Voter Registration</a></div>
+    <div class="card-meta">28 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">10</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">1</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:90.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:10.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/w2_form.jpg" data-gt="assets/gallery/w2_form_overlay.jpg" data-structural="assets/gallery/w2_form_structural.jpg" data-pred="assets/gallery/w2_form_prediction.jpg" data-gt-meta="44 standard entities" data-structural-meta="39 structural regions" data-pred-meta="0 hit, 44 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/w2_form.jpg" alt="W-2 Form"></div>
+    <div class="card-label"><a href="templates.html#w2_form" style="color:inherit;text-decoration:none;">W-2 Form</a></div>
+    <div class="card-meta">83 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">44</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">0</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">44</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">0%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:0.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:100.0%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/w4_form.jpg" data-gt="assets/gallery/w4_form_overlay.jpg" data-structural="assets/gallery/w4_form_structural.jpg" data-pred="assets/gallery/w4_form_prediction.jpg" data-gt-meta="15 standard entities" data-structural-meta="25 structural regions" data-pred-meta="9 hit, 13 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/w4_form.jpg" alt="W-4 Form"></div>
+    <div class="card-label"><a href="templates.html#w4_form" style="color:inherit;text-decoration:none;">W-4 Form</a></div>
+    <div class="card-meta">40 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">22</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">13</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">58%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:40.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:59.1%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/w9_form.jpg" data-gt="assets/gallery/w9_form_overlay.jpg" data-structural="assets/gallery/w9_form_structural.jpg" data-pred="assets/gallery/w9_form_prediction.jpg" data-gt-meta="9 standard entities" data-structural-meta="18 structural regions" data-pred-meta="3 hit, 10 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/w9_form.jpg" alt="W-9 Form"></div>
+    <div class="card-label"><a href="templates.html#w9_form" style="color:inherit;text-decoration:none;">W-9 Form</a></div>
+    <div class="card-meta">27 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">13</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">3</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">38%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:23.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:76.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/warranty.jpg" data-gt="assets/gallery/warranty_overlay.jpg" data-structural="assets/gallery/warranty_structural.jpg" data-pred="assets/gallery/warranty_prediction.jpg" data-gt-meta="10 standard entities" data-structural-meta="35 structural regions" data-pred-meta="10 hit, 6 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/warranty.jpg" alt="Warranty"></div>
+    <div class="card-label"><a href="templates.html#warranty" style="color:inherit;text-decoration:none;">Warranty</a></div>
+    <div class="card-meta">45 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">16</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">77%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:62.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:37.5%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/warranty_claim.jpg" data-gt="assets/gallery/warranty_claim_overlay.jpg" data-structural="assets/gallery/warranty_claim_structural.jpg" data-pred="assets/gallery/warranty_claim_prediction.jpg" data-gt-meta="13 standard entities" data-structural-meta="33 structural regions" data-pred-meta="19 hit, 4 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/warranty_claim.jpg" alt="Warranty Claim"></div>
+    <div class="card-label"><a href="templates.html#warranty_claim" style="color:inherit;text-decoration:none;">Warranty Claim</a></div>
+    <div class="card-meta">46 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">23</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">19</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:82.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:17.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/warranty_deed.jpg" data-gt="assets/gallery/warranty_deed_overlay.jpg" data-structural="assets/gallery/warranty_deed_structural.jpg" data-pred="assets/gallery/warranty_deed_prediction.jpg" data-gt-meta="22 standard entities" data-structural-meta="13 structural regions" data-pred-meta="16 hit, 15 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/warranty_deed.jpg" alt="Warranty Deed"></div>
+    <div class="card-label"><a href="templates.html#warranty_deed" style="color:inherit;text-decoration:none;">Warranty Deed</a></div>
+    <div class="card-meta">35 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">31</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">15</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:51.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.4%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/will_trust.jpg" data-gt="assets/gallery/will_trust_overlay.jpg" data-structural="assets/gallery/will_trust_structural.jpg" data-pred="assets/gallery/will_trust_prediction.jpg" data-gt-meta="31 standard entities" data-structural-meta="32 structural regions" data-pred-meta="20 hit, 17 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/will_trust.jpg" alt="Will Trust"></div>
+    <div class="card-label"><a href="templates.html#will_trust" style="color:inherit;text-decoration:none;">Will Trust</a></div>
+    <div class="card-meta">63 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">37</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">17</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">70%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:54.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:45.9%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+  <div class="gallery-card" data-original="assets/gallery/work_order.jpg" data-gt="assets/gallery/work_order_overlay.jpg" data-structural="assets/gallery/work_order_structural.jpg" data-pred="assets/gallery/work_order_prediction.jpg" data-gt-meta="37 standard entities" data-structural-meta="77 structural regions" data-pred-meta="14 hit, 23 miss">
+    <div class="card-img-wrap"><img src="assets/gallery/work_order.jpg" alt="Work Order"></div>
+    <div class="card-label"><a href="templates.html#work_order" style="color:inherit;text-decoration:none;">Work Order</a></div>
+    <div class="card-meta">114 annotations</div>
+    <div class="card-details">
+      <div class="detail-row"><span>Standard entities</span><span class="detail-val">37</span></div>
+      <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
+      <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
+      <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">23</span></div>
+      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">55%</span></div>
+      <div class="hit-miss-bar"><span class="bar-hit" style="width:37.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:62.2%"></span></div>
+    </div>
+    <button class="card-expand-btn">details</button>
+  </div>
+</div>
+<!-- GALLERY_END -->
+
+<!-- ── Baseline Results ─────────────────────────────────── -->
+<h2>Baseline: DeepSeek-OCR-2 + Qwen3-8B</h2>
+<p>OCR via <strong>DeepSeek-OCR-2</strong> (vision model), NER via <strong>Qwen3-8B</strong> (prompted, zero-shot). No fine-tuning.</p>
+
+<table>
+  <thead>
+    <tr><th>Entity Type</th><th class="num">TP</th><th class="num">FP</th><th class="num">FN</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th>F1</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>PHONE</td><td class="num">274</td><td class="num">36</td><td class="num">23</td><td class="num">0.884</td><td class="num">0.923</td><td class="num"><strong>0.903</strong></td><td><span class="bar bar-f" style="width:calc(0.903 * 120px)"></span></td></tr>
+    <tr><td>PERSON</td><td class="num">615</td><td class="num">119</td><td class="num">108</td><td class="num">0.838</td><td class="num">0.851</td><td class="num"><strong>0.844</strong></td><td><span class="bar bar-f" style="width:calc(0.844 * 120px)"></span></td></tr>
+    <tr><td>DATE</td><td class="num">1,256</td><td class="num">318</td><td class="num">497</td><td class="num">0.798</td><td class="num">0.717</td><td class="num"><strong>0.755</strong></td><td><span class="bar bar-f" style="width:calc(0.755 * 120px)"></span></td></tr>
+    <tr><td>ORG</td><td class="num">510</td><td class="num">198</td><td class="num">226</td><td class="num">0.720</td><td class="num">0.693</td><td class="num"><strong>0.706</strong></td><td><span class="bar bar-f" style="width:calc(0.706 * 120px)"></span></td></tr>
+    <tr><td>ID</td><td class="num">894</td><td class="num">255</td><td class="num">653</td><td class="num">0.778</td><td class="num">0.578</td><td class="num"><strong>0.663</strong></td><td><span class="bar bar-f" style="width:calc(0.663 * 120px)"></span></td></tr>
+    <tr><td>AMOUNT</td><td class="num">1,938</td><td class="num">644</td><td class="num">1,843</td><td class="num">0.751</td><td class="num">0.513</td><td class="num"><strong>0.609</strong></td><td><span class="bar bar-f" style="width:calc(0.609 * 120px)"></span></td></tr>
+    <tr><td>ADDRESS</td><td class="num">358</td><td class="num">550</td><td class="num">127</td><td class="num">0.394</td><td class="num">0.738</td><td class="num"><strong>0.514</strong></td><td><span class="bar bar-f" style="width:calc(0.514 * 120px)"></span></td></tr>
+  </tbody>
+</table>
+
+<!-- key findings + other models sections removed -->
+
+</div>
+
+<!-- ── Lightbox ────────────────────────────────────────────── -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">&times;</button>
+  <img id="lightboxImg" src="" alt="Enlarged view">
+</div>
+
+<!-- ── Gallery toggle JS ─────────────────────────────────── -->
+<script>
+(function() {
+  var toggle = document.getElementById('phaseToggle');
+  var gallery = document.getElementById('gallery');
+  var currentPhase = 'original';
+
+  toggle.addEventListener('click', function(e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    var phase = btn.dataset.phase;
+    if (phase === currentPhase) return;
+
+    // Update active button
+    toggle.querySelectorAll('button').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    currentPhase = phase;
+
+    // Swap all card images
+    gallery.querySelectorAll('.gallery-card').forEach(function(card) {
+      var img = card.querySelector('img');
+      var src = card.dataset[phase];
+      if (src) img.src = src;
+
+      // Update meta text
+      var meta = card.querySelector('.card-meta');
+      if (phase === 'gt' && card.dataset.gtMeta) {
+        meta.textContent = card.dataset.gtMeta;
+      } else if (phase === 'structural' && card.dataset.structuralMeta) {
+        meta.textContent = card.dataset.structuralMeta;
+      } else if (phase === 'pred' && card.dataset.predMeta) {
+        meta.textContent = card.dataset.predMeta;
+      } else {
+        meta.textContent = meta.dataset.defaultMeta || meta.textContent;
+      }
+    });
+  });
+
+  // Store default meta text
+  gallery.querySelectorAll('.gallery-card .card-meta').forEach(function(meta) {
+    meta.dataset.defaultMeta = meta.textContent;
+  });
+
+  // Lightbox — click image to enlarge
+  var lightbox = document.getElementById('lightbox');
+  var lightboxImg = document.getElementById('lightboxImg');
+  gallery.addEventListener('click', function(e) {
+    // Inspect link handles itself
+    if (e.target.closest('.card-inspect-link')) return;
+    // Image area opens lightbox
+    var imgWrap = e.target.closest('.card-img-wrap');
+    if (imgWrap) {
+      var card = imgWrap.closest('.gallery-card');
+      var img = card.querySelector('img');
+      if (img) {
+        lightboxImg.src = img.src;
+        lightbox.classList.add('active');
+      }
+      return;
+    }
+    // Clicking anywhere else on the card navigates to inspector
+    var card = e.target.closest('.gallery-card');
+    if (card) {
+      var ttype = card.getAttribute('data-template-type');
+      if (ttype) window.location.href = 'templates.html#' + ttype;
+    }
+  });
+  document.getElementById('lightboxClose').addEventListener('click', function() {
+    lightbox.classList.remove('active');
+  });
+  lightbox.addEventListener('click', function(e) {
+    if (e.target === lightbox) lightbox.classList.remove('active');
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') lightbox.classList.remove('active');
+  });
+})();
+</script>
+
+</body>
+</html>
