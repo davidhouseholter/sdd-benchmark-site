@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+d<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1013,6 +1013,31 @@
 .template-stats span {
     white-space: nowrap;
 }
+.view-mode-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 6px 20px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #e0e0e0;
+}
+.view-tab {
+    padding: 4px 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: 500;
+    color: #666;
+}
+.view-tab.active {
+    background: #2c3e50;
+    color: #fff;
+    border-color: #2c3e50;
+}
+.view-tab:hover:not(.active) {
+    background: #e8e8e8;
+}
 .annotations-table-container {
     flex-shrink: 0;
     overflow: auto;
@@ -2006,6 +2031,37 @@ function loadTemplatesData() {
     return [];
 }
 
+var STANDARD_NER = new Set(['PERSON','ORG','DATE','ADDRESS','AMOUNT','PHONE','ID','LOCATION','QUANTITY','EMAIL','URL','DURATION']);
+
+function setViewMode(templateName, mode, btn) {
+    // Update active tab
+    btn.closest('.view-mode-tabs').querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    // Get all bbox rects for this template
+    var svg = document.querySelector('.overlay-' + templateName);
+    if (!svg) return;
+    var rects = svg.querySelectorAll('rect.bbox');
+    rects.forEach(function(r) {
+        var type = r.getAttribute('data-type') || '';
+        if (mode === 'doc') {
+            r.style.display = 'none';
+        } else if (mode === 'ner') {
+            r.style.display = STANDARD_NER.has(type) ? '' : 'none';
+        } else {
+            r.style.display = '';
+        }
+    });
+    // Also handle multi-page: apply to all overlay SVGs
+    document.querySelectorAll('.overlay-' + templateName).forEach(function(s) {
+        s.querySelectorAll('rect.bbox').forEach(function(r) {
+            var type = r.getAttribute('data-type') || '';
+            if (mode === 'doc') r.style.display = 'none';
+            else if (mode === 'ner') r.style.display = STANDARD_NER.has(type) ? '' : 'none';
+            else r.style.display = '';
+        });
+    });
+}
+
 /**
  * Render a template section dynamically
  */
@@ -2047,6 +2103,8 @@ function renderTemplate(templateName) {
     // Show the template
     currentlyLoadedTemplate = templateName;
     showTemplate(templateName);
+
+    // Default: GT (all annotations visible, no filtering needed)
 }
 
 /**
@@ -2156,11 +2214,17 @@ function buildTemplateHTML(data) {
                 </div>
             </div>
             
+            <div class="view-mode-tabs">
+                <button class="view-tab active" data-mode="gt" onclick="setViewMode('${template_name}', 'gt', this)">GT</button>
+                <button class="view-tab" data-mode="ner" onclick="setViewMode('${template_name}', 'ner', this)">NER</button>
+                <button class="view-tab" data-mode="doc" onclick="setViewMode('${template_name}', 'doc', this)">Doc</button>
+            </div>
+
             <div class="template-content">
                 <div class="page-sidebar" id="page_sidebar_${template_name}">
                     ${pageThumbs}
                 </div>
-                
+
                 <div class="viewer-content">
                     ${pageContainers}
                 </div>

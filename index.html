@@ -140,11 +140,41 @@
 
 <!-- ── Overview ──────────────────────────────────────────── -->
 <h2>Project Overview</h2>
-<p>We generate synthetic documents (invoices, tax forms, medical records, legal pleadings, etc.) from HTML/CSS templates with embedded RDFa annotations. Each document comes with exact bounding boxes and entity labels &mdash; no human annotation needed.</p>
-<p>This benchmark measures how well off-the-shelf OCR + NER pipelines extract structured entities from these documents, establishing baselines before fine-tuning.</p>
+<p>Pixel-perfect synthetic documents (invoices, tax forms, medical records, legal pleadings, etc.) with exact bounding boxes and entity labels for every field on the page.</p>
 
 <!-- example comparisons + legends removed -->
 
+
+<h3 style="margin:1.5rem 0 0.25rem; font-size:1rem;">Entity Types</h3>
+<p style="margin:0 0 0.75rem; font-size:0.85rem; color:var(--muted); max-width:48rem;">Every annotation is labeled with one of 19 entity types across two categories. <strong>Standard NER</strong> types represent extractable information &mdash; names, dates, amounts, identifiers &mdash; the targets for NER model evaluation. <strong>Structural</strong> types describe document layout elements like table cells and section headings.</p>
+
+<div class="entity-taxonomy">
+  <div class="tax-group">
+    <span class="tax-label">Standard NER</span>
+    <span class="tax-chip" style="--c:#a855f7">PERSON</span>
+    <span class="tax-chip" style="--c:#3b82f6">ORG</span>
+    <span class="tax-chip" style="--c:#14b8a6">DATE</span>
+    <span class="tax-chip" style="--c:#ef4444">ADDRESS</span>
+    <span class="tax-chip" style="--c:#f97316">AMOUNT</span>
+    <span class="tax-chip" style="--c:#22c55e">PHONE</span>
+    <span class="tax-chip" style="--c:#eab308">ID</span>
+    <span class="tax-chip" style="--c:#06b6d4">EMAIL</span>
+    <span class="tax-chip" style="--c:#8b5cf6">LOCATION</span>
+    <span class="tax-chip" style="--c:#d946ef">QUANTITY</span>
+    <span class="tax-chip" style="--c:#0ea5e9">URL</span>
+    <span class="tax-chip" style="--c:#84cc16">DURATION</span>
+  </div>
+  <div class="tax-group">
+    <span class="tax-label">Structural</span>
+    <span class="tax-chip tax-structural">TABLE_CELL</span>
+    <span class="tax-chip tax-structural">TABLE_HEADER</span>
+    <span class="tax-chip tax-structural">FIELD_LABEL</span>
+    <span class="tax-chip tax-structural">TITLE</span>
+    <span class="tax-chip tax-structural">SECTION_TITLE</span>
+    <span class="tax-chip tax-structural">TEXT</span>
+    <span class="tax-chip tax-structural">CAPTION</span>
+  </div>
+</div>
 <!-- ── Dataset ──────────────────────────────────────────── -->
 <h2>Dataset</h2>
 
@@ -158,7 +188,7 @@
       <div><span class="tier-num">45K</span><span class="tier-unit">annotations</span></div>
     </div>
     <div class="tier-detail">101 templates &middot; ~4 docs/template &middot; 19 entity types</div>
-    <a class="tier-link" href="https://huggingface.co/datasets/" target="_blank">huggingface.co/datasets/sdd-nano</a>
+    <!-- <a class="tier-link" href="https://huggingface.co/datasets/" target="_blank">huggingface.co/datasets/sdd-nano</a> -->
   </div>
   <div class="tier-card tier-planned">
     <div class="tier-badge">Planned</div>
@@ -192,34 +222,6 @@
   </div>
 </div>
 
-<div class="entity-taxonomy">
-  <div class="tax-group">
-    <span class="tax-label">Standard NER</span>
-    <span class="tax-chip" style="--c:#a855f7">PERSON</span>
-    <span class="tax-chip" style="--c:#3b82f6">ORG</span>
-    <span class="tax-chip" style="--c:#14b8a6">DATE</span>
-    <span class="tax-chip" style="--c:#ef4444">ADDRESS</span>
-    <span class="tax-chip" style="--c:#f97316">AMOUNT</span>
-    <span class="tax-chip" style="--c:#22c55e">PHONE</span>
-    <span class="tax-chip" style="--c:#eab308">ID</span>
-    <span class="tax-chip" style="--c:#06b6d4">EMAIL</span>
-    <span class="tax-chip" style="--c:#8b5cf6">LOCATION</span>
-    <span class="tax-chip" style="--c:#d946ef">QUANTITY</span>
-    <span class="tax-chip" style="--c:#0ea5e9">URL</span>
-    <span class="tax-chip" style="--c:#84cc16">DURATION</span>
-  </div>
-  <div class="tax-group">
-    <span class="tax-label">Structural</span>
-    <span class="tax-chip tax-structural">TABLE_CELL</span>
-    <span class="tax-chip tax-structural">TABLE_HEADER</span>
-    <span class="tax-chip tax-structural">FIELD_LABEL</span>
-    <span class="tax-chip tax-structural">TITLE</span>
-    <span class="tax-chip tax-structural">SECTION_TITLE</span>
-    <span class="tax-chip tax-structural">TEXT</span>
-    <span class="tax-chip tax-structural">CAPTION</span>
-  </div>
-</div>
-
 <!-- ── Template Gallery ──────────────────────────────────── -->
 <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
   <h2 style="margin:0;">Template Gallery</h2>
@@ -231,9 +233,9 @@
 
 <div class="gallery-controls">
   <div class="phase-toggle" id="phaseToggle">
-    <button class="active" data-phase="original">Document</button>
+    <button class="active" data-phase="pred">NER Results</button>
     <button data-phase="gt">Ground Truth</button>
-    <button data-phase="pred">NER Results</button>
+    <button data-phase="original">Document</button>
   </div>
   <select class="model-select" id="modelSelect">
     <option value="deepseek_qwen3" selected>DeepSeek-OCR-2 + Qwen3-8B</option>
@@ -254,7 +256,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">1</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:90.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:10.0%"></span></div>
     </div>
@@ -269,7 +271,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">56</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">44%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:28.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:71.8%"></span></div>
     </div>
@@ -284,7 +286,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:61.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.9%"></span></div>
     </div>
@@ -299,7 +301,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">5</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">19</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">0</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">100%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:100.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:0.0%"></span></div>
     </div>
@@ -314,7 +316,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">0</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">75</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">0%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:0.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:100.0%"></span></div>
     </div>
@@ -329,7 +331,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">25</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">70</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">42%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:26.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:73.7%"></span></div>
     </div>
@@ -344,7 +346,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">33</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:82.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:17.5%"></span></div>
     </div>
@@ -359,7 +361,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">40</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">50%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:33.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:66.7%"></span></div>
     </div>
@@ -374,7 +376,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">31</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">27</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">70%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:53.4%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:46.6%"></span></div>
     </div>
@@ -389,7 +391,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">69%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:52.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:47.4%"></span></div>
     </div>
@@ -404,7 +406,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:69.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:31.0%"></span></div>
     </div>
@@ -419,7 +421,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">25</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">96%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:92.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:7.4%"></span></div>
     </div>
@@ -434,7 +436,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">4</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">73%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:57.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:42.9%"></span></div>
     </div>
@@ -449,7 +451,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">5</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">0</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">100%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:100.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:0.0%"></span></div>
     </div>
@@ -464,7 +466,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">89%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:80.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:20.0%"></span></div>
     </div>
@@ -479,7 +481,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">23</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">18</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">72%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:56.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:43.9%"></span></div>
     </div>
@@ -494,7 +496,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">47</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">37%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:23.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:77.0%"></span></div>
     </div>
@@ -509,7 +511,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">23</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:69.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.3%"></span></div>
     </div>
@@ -524,7 +526,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">18</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">84%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:72.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:28.0%"></span></div>
     </div>
@@ -539,7 +541,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">25</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">14</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">78%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:64.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:35.9%"></span></div>
     </div>
@@ -554,7 +556,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">23</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">31</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">60%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:42.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:57.4%"></span></div>
     </div>
@@ -569,7 +571,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">75%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:60.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:40.0%"></span></div>
     </div>
@@ -584,7 +586,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">30</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">38</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">61%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:44.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:55.9%"></span></div>
     </div>
@@ -599,7 +601,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">19</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">51%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:34.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:65.5%"></span></div>
     </div>
@@ -614,7 +616,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">1</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">25%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:14.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:85.7%"></span></div>
     </div>
@@ -629,7 +631,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">86%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:76.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:23.8%"></span></div>
     </div>
@@ -644,7 +646,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">6</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">86%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:75.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:25.0%"></span></div>
     </div>
@@ -659,7 +661,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">73%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:57.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:42.1%"></span></div>
     </div>
@@ -674,7 +676,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:69.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.8%"></span></div>
     </div>
@@ -689,7 +691,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">36</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">13</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">85%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:73.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:26.5%"></span></div>
     </div>
@@ -704,7 +706,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:81.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:18.2%"></span></div>
     </div>
@@ -719,7 +721,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:50.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:50.0%"></span></div>
     </div>
@@ -734,7 +736,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:81.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:18.8%"></span></div>
     </div>
@@ -749,7 +751,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">21</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:70.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.0%"></span></div>
     </div>
@@ -764,7 +766,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:69.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:31.0%"></span></div>
     </div>
@@ -779,7 +781,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">87%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:76.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:23.1%"></span></div>
     </div>
@@ -794,7 +796,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">30</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:90.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:9.1%"></span></div>
     </div>
@@ -809,7 +811,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">94%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:88.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:12.0%"></span></div>
     </div>
@@ -824,7 +826,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">14</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">63%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:46.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:53.8%"></span></div>
     </div>
@@ -839,7 +841,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">96%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:91.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:8.3%"></span></div>
     </div>
@@ -854,7 +856,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">15</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">59%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:42.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:57.7%"></span></div>
     </div>
@@ -869,7 +871,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">17</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">62%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:45.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:54.8%"></span></div>
     </div>
@@ -884,7 +886,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">80%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:66.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:33.3%"></span></div>
     </div>
@@ -899,7 +901,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">12</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:52.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.0%"></span></div>
     </div>
@@ -914,7 +916,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">2</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:50.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:50.0%"></span></div>
     </div>
@@ -929,7 +931,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">85%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:73.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:26.3%"></span></div>
     </div>
@@ -944,7 +946,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:54.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:45.5%"></span></div>
     </div>
@@ -959,7 +961,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">5</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">88%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:77.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:22.2%"></span></div>
     </div>
@@ -974,7 +976,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">84%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:72.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:27.3%"></span></div>
     </div>
@@ -989,7 +991,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">19</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">93%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:86.4%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:13.6%"></span></div>
     </div>
@@ -1004,7 +1006,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">91%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:83.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:16.7%"></span></div>
     </div>
@@ -1019,7 +1021,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">28</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">97%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:93.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:6.7%"></span></div>
     </div>
@@ -1034,7 +1036,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">0</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">0%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:0.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:100.0%"></span></div>
     </div>
@@ -1049,7 +1051,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">8</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">8</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">80%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:66.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:33.3%"></span></div>
     </div>
@@ -1064,7 +1066,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">4</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">47%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:30.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:69.2%"></span></div>
     </div>
@@ -1079,7 +1081,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">22</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">22</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:50.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:50.0%"></span></div>
     </div>
@@ -1094,7 +1096,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">72%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:56.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:43.8%"></span></div>
     </div>
@@ -1109,7 +1111,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">78%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:63.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:36.4%"></span></div>
     </div>
@@ -1124,7 +1126,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">15</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">46</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">39%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:24.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:75.4%"></span></div>
     </div>
@@ -1139,7 +1141,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">6</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">15</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:51.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.4%"></span></div>
     </div>
@@ -1154,7 +1156,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">29</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">3</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:90.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:9.4%"></span></div>
     </div>
@@ -1169,7 +1171,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">19</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:51.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.7%"></span></div>
     </div>
@@ -1184,7 +1186,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">18</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">82%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:69.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:30.8%"></span></div>
     </div>
@@ -1199,7 +1201,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">15</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">81%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:68.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:31.8%"></span></div>
     </div>
@@ -1214,7 +1216,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:55.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:44.4%"></span></div>
     </div>
@@ -1229,7 +1231,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">8</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:61.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.1%"></span></div>
     </div>
@@ -1244,7 +1246,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">83%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:70.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:29.4%"></span></div>
     </div>
@@ -1259,7 +1261,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">28</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:82.4%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:17.6%"></span></div>
     </div>
@@ -1274,7 +1276,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">12</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:52.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.0%"></span></div>
     </div>
@@ -1289,7 +1291,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">29</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">28</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">67%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:50.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:49.1%"></span></div>
     </div>
@@ -1304,7 +1306,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">89%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:80.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:20.0%"></span></div>
     </div>
@@ -1319,7 +1321,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">13</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">61%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:43.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:56.5%"></span></div>
     </div>
@@ -1334,7 +1336,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">58%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:41.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:58.8%"></span></div>
     </div>
@@ -1349,7 +1351,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">2</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">34</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">11%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:5.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:94.4%"></span></div>
     </div>
@@ -1364,7 +1366,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">33</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">21</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:61.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.9%"></span></div>
     </div>
@@ -1379,7 +1381,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">13</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">84%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:72.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:27.8%"></span></div>
     </div>
@@ -1394,7 +1396,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">6</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">5</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:54.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:45.5%"></span></div>
     </div>
@@ -1409,7 +1411,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">7</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:61.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:38.9%"></span></div>
     </div>
@@ -1424,7 +1426,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">29</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">17</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">77%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:63.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:37.0%"></span></div>
     </div>
@@ -1439,7 +1441,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">2</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">50%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:33.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:66.7%"></span></div>
     </div>
@@ -1454,7 +1456,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">85%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:73.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:26.7%"></span></div>
     </div>
@@ -1469,7 +1471,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">32</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">43%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:27.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:72.7%"></span></div>
     </div>
@@ -1484,7 +1486,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">7</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">19</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">42%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:26.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:73.1%"></span></div>
     </div>
@@ -1499,7 +1501,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">24</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">2</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">96%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:92.3%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:7.7%"></span></div>
     </div>
@@ -1514,7 +1516,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">20</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">96</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">78</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">71%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:55.2%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:44.8%"></span></div>
     </div>
@@ -1529,7 +1531,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">4</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">47</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">15%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:7.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:92.2%"></span></div>
     </div>
@@ -1544,7 +1546,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">12</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">73%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:57.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:42.9%"></span></div>
     </div>
@@ -1559,7 +1561,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">31</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">34</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">65%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:47.7%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:52.3%"></span></div>
     </div>
@@ -1574,7 +1576,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">4</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">11</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">12</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">65%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:47.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:52.2%"></span></div>
     </div>
@@ -1589,7 +1591,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">9</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">76%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:60.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:39.1%"></span></div>
     </div>
@@ -1604,7 +1606,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">75%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:60.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:40.0%"></span></div>
     </div>
@@ -1619,7 +1621,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">5</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">28</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">93%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:87.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:12.5%"></span></div>
     </div>
@@ -1634,7 +1636,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">1</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">95%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:90.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:10.0%"></span></div>
     </div>
@@ -1649,7 +1651,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">0</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">44</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">0%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:0.0%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:100.0%"></span></div>
     </div>
@@ -1664,7 +1666,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">9</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">13</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">58%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:40.9%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:59.1%"></span></div>
     </div>
@@ -1679,7 +1681,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">3</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">10</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">38%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:23.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:76.9%"></span></div>
     </div>
@@ -1694,7 +1696,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">10</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">6</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">77%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:62.5%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:37.5%"></span></div>
     </div>
@@ -1709,7 +1711,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">3</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">19</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">4</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">90%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:82.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:17.4%"></span></div>
     </div>
@@ -1724,7 +1726,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">16</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">15</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">68%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:51.6%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:48.4%"></span></div>
     </div>
@@ -1739,7 +1741,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">2</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">20</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">17</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">70%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:54.1%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:45.9%"></span></div>
     </div>
@@ -1754,7 +1756,7 @@
       <div class="detail-row"><span>Docs / Pages</span><span class="detail-val">1</span></div>
       <div class="detail-row"><span>Hits</span><span class="detail-val" style="color:var(--green)">14</span></div>
       <div class="detail-row"><span>Misses</span><span class="detail-val" style="color:var(--red)">23</span></div>
-      <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div>
+      <!-- <div class="detail-row"><span>Type confusion</span><span class="detail-val" style="color:var(--amber)">0</span></div> -->
       <div class="detail-row"><span>F1 (approx)</span><span class="detail-val">55%</span></div>
       <div class="hit-miss-bar"><span class="bar-hit" style="width:37.8%"></span><span class="bar-conf" style="width:0.0%"></span><span class="bar-miss" style="width:62.2%"></span></div>
     </div>
@@ -1797,7 +1799,16 @@
 (function() {
   var toggle = document.getElementById('phaseToggle');
   var gallery = document.getElementById('gallery');
-  var currentPhase = 'original';
+  var currentPhase = 'pred';
+
+  // Apply default phase (pred) on load
+  gallery.querySelectorAll('.gallery-card').forEach(function(card) {
+    var img = card.querySelector('img');
+    var src = card.dataset['pred'];
+    if (src) img.src = src;
+    var meta = card.querySelector('.card-meta');
+    if (card.dataset.predMeta) meta.textContent = card.dataset.predMeta;
+  });
 
   toggle.addEventListener('click', function(e) {
     var btn = e.target.closest('button');
