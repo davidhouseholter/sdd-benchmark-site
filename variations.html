@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template Variations Matrix - Synthetic Document Benchmark</title>
+<style>
+  :root { --bg: #fff; --fg: #1a1a1a; --muted: #666; --border: #ddd; --accent: #2563eb; --card: #f8f9fa; --green: #16a34a; --purple: #7c3aed; --amber: #d97706; --red: #dc2626; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111; --fg: #e5e5e5; --muted: #999; --border: #333; --accent: #60a5fa; --card: #1a1a1a; --green: #4ade80; --purple: #a78bfa; --amber: #fbbf24; --red: #f87171; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+  .site-nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 0; }
+  .site-nav .brand { font-weight: 700; font-size: .95rem; padding: 10px 16px 10px 0; border-right: 1px solid var(--border); margin-right: 4px; color: var(--fg); text-decoration: none; }
+  .site-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; padding: 10px 14px; transition: color .15s; }
+  .site-nav a:hover { color: var(--fg); }
+  .site-nav a.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  p, li { color: var(--fg); }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
+  
+  .hero { background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin: 1.5rem 0; }
+  .hero h2 { margin-top: 0; border: none; padding: 0; }
+  
+  .matrix-section { margin: 2rem 0; }
+  
+  .category-header { display: flex; align-items: center; gap: 0.75rem; margin: 2rem 0 1rem; padding: 0.75rem 1rem; background: var(--card); border-radius: 8px; border-left: 4px solid; }
+  .category-header.strict { border-left-color: var(--red); }
+  .category-header.medium { border-left-color: var(--amber); }
+  .category-header.creative { border-left-color: var(--purple); }
+  
+  .category-header h3 { margin: 0; }
+  .category-badge { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
+  .badge-strict { background: var(--red); color: #fff; }
+  .badge-medium { background: var(--amber); color: #fff; }
+  .badge-creative { background: var(--purple); color: #fff; }
+  
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; background: var(--card); position: sticky; top: 0; }
+  tr:hover { background: var(--card); }
+  td { vertical-align: top; }
+  .template-name { font-weight: 600; color: var(--fg); }
+  .strategy { font-size: 0.85rem; color: var(--muted); max-width: 400px; }
+  
+  .variability-indicator { display: inline-flex; gap: 2px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot.filled { background: var(--accent); }
+  .dot.empty { background: var(--border); }
+  
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .summary-card { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 1.25rem; text-align: center; }
+  .summary-card .num { font-size: 2rem; font-weight: 700; }
+  .summary-card .label { font-size: 0.9rem; color: var(--muted); margin-top: 0.25rem; }
+  .summary-card.strict { border-color: var(--red); }
+  .summary-card.strict .num { color: var(--red); }
+  .summary-card.medium { border-color: var(--amber); }
+  .summary-card.medium .num { color: var(--amber); }
+  .summary-card.creative { border-color: var(--purple); }
+  .summary-card.creative .num { color: var(--purple); }
+  
+  .highlight-box { background: var(--card); border-left: 4px solid var(--accent); padding: 1rem 1.25rem; margin: 1rem 0; }
+  
+  .comparison-table { margin: 2rem 0; }
+  .comparison-table th { text-align: center; }
+  .comparison-table td { text-align: center; }
+  .comparison-table td:first-child { text-align: left; font-weight: 600; }
+  
+  .use-case-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .use-case-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+  .use-case-card h4 { color: var(--accent); margin-bottom: 0.5rem; }
+  .use-case-card ul { margin-top: 0.5rem; font-size: 0.9rem; }
+  
+  code { background: var(--bg); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; font-family: "SF Mono", Monaco, monospace; border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="brand" href="index.html">SDD Benchmark</a>
+  <a href="index.html">Overview</a>
+  <a href="templates.html">Templates</a>
+  <a href="pipeline.html">Pipeline</a>
+  <a href="variations.html" class="active">Variations</a>
+  <a href="paper.html">Paper</a>
+  <a href="doco-fd.html">DoCO-FD</a>
+</nav>
+
+<div class="container">
+  <h1>Template Variations Matrix</h1>
+  <p class="subtitle">87 document types categorized by layout variability and variation strategy</p>
+
+  <div class="hero">
+    <h2>Variation Strategy Overview</h2>
+    <p>Not all documents should be varied equally. Government forms require strict adherence to standards, while business documents benefit from creative diversity. The SDD taxonomy classifies each template by its appropriate variation strategy.</p>
+    
+    <p style="margin-top: 1rem;"><strong>Key Insight:</strong> Layout variability correlates with real-world document diversity. Strict standardized forms (IRS, CMS) have low variability in reality, while marketing materials and certificates vary widely.</p>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card strict">
+      <div class="num">21</div>
+      <div class="label">Strict / Standardized<br>Low Variability</div>
+    </div>
+    <div class="summary-card medium">
+      <div class="num">43</div>
+      <div class="label">Moderate<br>Medium Variability</div>
+    </div>
+    <div class="summary-card creative">
+      <div class="num">23</div>
+      <div class="label">Creative / Complex<br>High Variability</div>
+    </div>
+  </div>
+
+  <h2>Variation Categories</h2>
+
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>Characteristic</th>
+        <th>Strict / Standardized</th>
+        <th>Moderate</th>
+        <th>Creative / Complex</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Layout Variability</td>
+        <td>Low - Fixed positions</td>
+        <td>Medium - Some flexibility</td>
+        <td>High - Highly flexible</td>
+      </tr>
+      <tr>
+        <td>Real-world Parallel</td>
+        <td>Government forms, IRS</td>
+        <td>Business documents</td>
+        <td>Marketing, certificates</td>
+      </tr>
+      <tr>
+        <td>Pixel Precision</td>
+        <td>Critical</td>
+        <td>Important</td>
+        <td>Flexible</td>
+      </tr>
+      <tr>
+        <td>Variation Strategy</td>
+        <td>Minimal - fonts only</td>
+        <td>Structural elements</td>
+        <td>Full layout redesign</td>
+      </tr>
+      <tr>
+        <td>Use Case</td>
+        <td>OCR accuracy testing</td>
+        <td>Form understanding</td>
+        <td>Layout robustness</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Strict / Standardized Forms (Low Variability)</h2>
+  
+  <div class="highlight-box">
+    <p><strong>Strategy:</strong> Maintain strict adherence to official formats. Variation limited to minor font changes and subtle styling. Pixel-perfect layout consistency is prioritized over diversity.</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Template</th>
+        <th>Category</th>
+        <th>Variation Strategy</th>
+        <th>Why Strict?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="template-name">CMS 1500</td>
+        <td>Medical</td>
+        <td class="strategy">Strict layout compliance required for insurance claims processing</td>
+        <td>Federal standard</td>
+      </tr>
+      <tr>
+        <td class="template-name">CMS 485</td>
+        <td>Medical</td>
+        <td class="strategy">Strict layout compliance for home health certification</td>
+        <td>Medicare requirement</td>
+      </tr>
+      <tr>
+        <td class="template-name">Form I-9</td>
+        <td>Government</td>
+        <td class="strategy">USCIS mandated format - no variation allowed</td>
+        <td>Legal compliance</td>
+      </tr>
+      <tr>
+        <td class="template-name">IRS Form 1040</td>
+        <td>Tax</td>
+        <td class="strategy">Strict adherence to IRS format with red ink simulation</td>
+        <td>Tax authority standard</td>
+      </tr>
+      <tr>
+        <td class="template-name">Closing Disclosure</td>
+        <td>Financial</td>
+        <td class="strategy">Strict adherence to government mandate (CFPB format)</td>
+        <td>TRID compliance</td>
+      </tr>
+      <tr>
+        <td class="template-name">AIA G702/G703</td>
+        <td>Construction</td>
+        <td class="strategy">Strict adherence to AIA standard blocks and tables</td>
+        <td>Industry standard</td>
+      </tr>
+      <tr>
+        <td class="template-name">Passport</td>
+        <td>Identity</td>
+        <td class="strategy">ICAO 9303 standard compliance required</td>
+        <td>International standard</td>
+      </tr>
+      <tr>
+        <td class="template-name">Tax Transcript</td>
+        <td>Tax</td>
+        <td class="strategy">IRS official format with minimal variation</td>
+        <td>Government document</td>
+      </tr>
+      <tr>
+        <td class="template-name">SDS / MSDS</td>
+        <td>Safety</td>
+        <td class="strategy">OSHA/GHS standardized 16-section format</td>
+        <td>Safety compliance</td>
+      </tr>
+      <tr>
+        <td class="template-name">DEA Form 222</td>
+        <td>Medical</td>
+        <td class="strategy">Strict layout for controlled substance tracking</td>
+        <td>DEA requirement</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Creative / Complex Layouts (High Variability)</h2>
+  
+  <div class="highlight-box" style="border-left-color: var(--purple);">
+    <p><strong>Strategy:</strong> Maximum layout variation including positioning, fonts, colors, and structural reorganization. Same semantic content presented in dramatically different visual layouts.</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Template</th>
+        <th>Category</th>
+        <th>Variation Strategy</th>
+        <th>Variation Focus</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="template-name">Bank Statement</td>
+        <td>Financial</td>
+        <td class="strategy">Critically high variability. Multiple layouts, transaction table styles, branding placements.</td>
+        <td>Layout, tables, branding</td>
+      </tr>
+      <tr>
+        <td class="template-name">Birth Certificate</td>
+        <td>Vital Records</td>
+        <td class="strategy">Vary by US state and county designs. High value for robust identity verification.</td>
+        <td>Regional designs, seals</td>
+      </tr>
+      <tr>
+        <td class="template-name">Business Card</td>
+        <td>Business</td>
+        <td class="strategy">Maximum variability required. Wild layouts, fonts, and orientations.</td>
+        <td>Layout, typography</td>
+      </tr>
+      <tr>
+        <td class="template-name">Generic Certificate</td>
+        <td>Academic</td>
+        <td class="strategy">Vary decorative borders, fonts, and signature layouts.</td>
+        <td>Visual design</td>
+      </tr>
+      <tr>
+        <td class="template-name">Blueprint</td>
+        <td>Technical</td>
+        <td class="strategy">Vary title block locations and data field arrangements.</td>
+        <td>Technical layout</td>
+      </tr>
+      <tr>
+        <td class="template-name">Commercial Invoice</td>
+        <td>International</td>
+        <td class="strategy">Vary layout significantly; key fields (incoterms, HS codes) move frequently.</td>
+        <td>Field positioning</td>
+      </tr>
+      <tr>
+        <td class="template-name">Credit Card Statement</td>
+        <td>Financial</td>
+        <td class="strategy">High brand-specific variance. Vary summary box locations.</td>
+        <td>Branding, layout</td>
+      </tr>
+      <tr>
+        <td class="template-name">Diploma</td>
+        <td>Academic</td>
+        <td class="strategy">Vary font styles (old english vs modern), seals, and orientations.</td>
+        <td>Visual style</td>
+      </tr>
+      <tr>
+        <td class="template-name">Academic Transcript</td>
+        <td>Academic</td>
+        <td class="strategy">Vary table structures, grading scales, and header placements largely.</td>
+        <td>Table layouts</td>
+      </tr>
+      <tr>
+        <td class="template-name">After Visit Summary</td>
+        <td>Medical</td>
+        <td class="strategy">Vary section ordering (vitals, meds, instructions) and EHR generated styling.</td>
+        <td>Section ordering</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Machine Learning Implications</h2>
+
+  <div class="use-case-grid">
+    <div class="use-case-card">
+      <h4>🏛️ Strict Forms → LayoutLM / Form Understanding</h4>
+      <p>Low variability forms are ideal for:</p>
+      <ul>
+        <li>Training field detection models</li>
+        <li>Key-value pair extraction</li>
+        <li>Form structure understanding</li>
+        <li>Accuracy benchmarking</li>
+      </ul>
+    </div>
+    
+    <div class="use-case-card">
+      <h4>🎨 Creative Layouts → Layout Robustness</h4>
+      <p>High variability templates test:</p>
+      <ul>
+        <li>Model generalization across layouts</li>
+        <li>Visual reasoning capabilities</li>
+        <li>Handling unstructured documents</li>
+        <li>Zero-shot transfer</li>
+      </ul>
+    </div>
+    
+    <div class="use-case-card">
+      <h4>⚖️ Mixed Training → Production Ready</h4>
+      <p>Combined dataset enables:</p>
+      <ul>
+        <li>Robustness to layout variations</li>
+        <li>Handling of standardized forms</li>
+        <li>Real-world deployment readiness</li>
+        <li>Comprehensive evaluation</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Variation Implementation</h2>
+
+  <div class="highlight-box">
+    <p><strong>Implementation Strategy:</strong> Variation is controlled at the template level through:</p>
+    <ul style="margin-top: 0.5rem;">
+      <li><strong>CSS variability:</strong> Different stylesheets for the same semantic structure</li>
+      <li><strong>Jinja2 conditionals:</strong> Template logic switches layout patterns</li>
+      <li><strong>Randomized positioning:</strong> Controlled offset ranges for field placement</li>
+      <li><strong>Font substitution:</strong> Typography changes within family groups</li>
+      <li><strong>Color schemes:</strong> Brand color randomization for business documents</li>
+    </ul>
+  </div>
+
+  <h3>Technical Approach</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Variation Type</th>
+        <th>Strict Forms</th>
+        <th>Creative Forms</th>
+        <th>Implementation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Position Offset</td>
+        <td>±5px</td>
+        <td>±50px or full reorder</td>
+        <td>CSS randomization</td>
+      </tr>
+      <tr>
+        <td>Font Family</td>
+        <td>Within type (serif/sans)</td>
+        <td>Any available</td>
+        <td>Template variables</td>
+      </tr>
+      <tr>
+        <td>Color Scheme</td>
+        <td>Monochrome only</td>
+        <td>Full RGB</td>
+        <td>CSS custom properties</td>
+      </tr>
+      <tr>
+        <td>Table Structure</td>
+        <td>Fixed columns</td>
+        <td>Variable columns/rows</td>
+        <td>Jinja2 loops</td>
+      </tr>
+      <tr>
+        <td>Section Order</td>
+        <td>Fixed</td>
+        <td>Shuffled</td>
+        <td>Template macros</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Full Template Taxonomy</h2>
+  
+  <p style="margin-bottom: 1rem;">Complete list of all 87 templates with their variability classification:</p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; margin: 2rem 0;">
+    <div>
+      <h3 style="color: var(--red);">Low Variability (21)</h3>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem;">Government • Standards • Compliance</p>
+      <div style="font-size: 0.85rem; line-height: 1.8;">
+        AIA Construction Pay App, AIA G702/G703, Auto Lease Agreement, Closing Disclosure, CMS 1500, CMS 485, DEA Form 222, Form I-9, Health Insurance Card, IRS Form 1040, IRS Form 1099, IRS Tax Transcript, Lease Agreement, Loan Estimate, Marriage Certificate, Material Safety Data Sheet, Mortgage Statement, Passport, Police Crash Report, UCC Filing Statement, Utility Bill
+      </div>
+    </div>
+    
+    <div>
+      <h3 style="color: var(--amber);">Medium Variability (43)</h3>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem;">Business • Professional • Industry</p>
+      <div style="font-size: 0.85rem; line-height: 1.8;">
+        ADP Payroll Report, Affidavit, Articles of Incorporation, Auto Loan Application, Bill of Lading, Bill of Materials, Budget Report, Building Permit, Certificate of Analysis, Certificate of Insurance, Change Order, Commission Agreement, Consignment Note, Consulting Agreement, Contract, Credit Application, Custom Declaration, Distributor Agreement, Email Header, Employee Handbook, Equipment Lease, Event Contract, Explanation of Benefits, Fax Cover Sheet, General Ledger, Invoice, Loan Application, Medical Records Release, Minutes of Meeting, NDA, Packing List, Patent Application, Pay Stub, PO, Promissory Note, Purchase Agreement, Receipt, Rent Roll, Resume, Shipping Label, Stock Certificate, Subcontract Agreement, Vaccination Card
+      </div>
+    </div>
+    
+    <div>
+      <h3 style="color: var(--purple);">High Variability (23)</h3>
+      <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem;">Creative • Marketing • Diverse</p>
+      <div style="font-size: 0.85rem; line-height: 1.8;">
+        Academic Transcript, After Visit Summary, Bank Statement, Birth Certificate, Blueprint, Business Card, Certificate of Origin, Commercial Invoice, Coupon, Credit Card Statement, Diploma, Driver License, Event Ticket, Firearm Bill of Sale, Generic Certificate, Letterhead, Menu, Prescription, Property Deed, Purchase Order, Referral Order, Vehicle Title, Will
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

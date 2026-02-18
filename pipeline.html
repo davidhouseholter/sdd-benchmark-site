@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template & GT Pipeline - Synthetic Document Benchmark</title>
+<style>
+  :root { --bg: #fff; --fg: #1a1a1a; --muted: #666; --border: #ddd; --accent: #2563eb; --card: #f8f9fa; --green: #16a34a; --purple: #7c3aed; --amber: #d97706; --red: #dc2626; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111; --fg: #e5e5e5; --muted: #999; --border: #333; --accent: #60a5fa; --card: #1a1a1a; --green: #4ade80; --purple: #a78bfa; --amber: #fbbf24; --red: #f87171; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+  .site-nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 0; }
+  .site-nav .brand { font-weight: 700; font-size: .95rem; padding: 10px 16px 10px 0; border-right: 1px solid var(--border); margin-right: 4px; color: var(--fg); text-decoration: none; }
+  .site-nav a { color: var(--muted); text-decoration: none; font-size: .85rem; padding: 10px 14px; transition: color .15s; }
+  .site-nav a:hover { color: var(--fg); }
+  .site-nav a.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; border-bottom: 2px solid var(--border); padding-bottom: 0.3rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  p, li { color: var(--fg); }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 2rem; }
+  
+  .hero { background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin: 1.5rem 0; }
+  .hero h2 { margin-top: 0; border: none; padding: 0; }
+  
+  .pipeline-stage { background: var(--card); border: 2px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1rem 0; position: relative; }
+  .pipeline-stage.input { border-color: var(--accent); }
+  .pipeline-stage.process { border-color: var(--amber); }
+  .pipeline-stage.output { border-color: var(--green); }
+  .pipeline-stage h3 { margin-top: 0; display: flex; align-items: center; gap: 0.5rem; }
+  .stage-num { background: var(--accent); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; }
+  
+  .arrow-down { text-align: center; font-size: 2rem; color: var(--muted); margin: 0.5rem 0; }
+  
+  .component-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .component-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+  .component-card h4 { color: var(--accent); margin-bottom: 0.5rem; font-size: 1rem; }
+  .component-card p { font-size: 0.9rem; color: var(--muted); }
+  .component-card .tech { font-size: 0.75rem; color: var(--purple); margin-top: 0.5rem; font-weight: 600; }
+  
+  .data-flow { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1.5rem 0; }
+  .flow-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+  .flow-item:last-child { border-bottom: none; }
+  .flow-icon { width: 40px; height: 40px; background: var(--card); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .flow-content h4 { margin: 0; font-size: 0.95rem; }
+  .flow-content p { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
+  
+  .gt-explanation { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px solid var(--green); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  @media (prefers-color-scheme: dark) {
+    .gt-explanation { background: linear-gradient(135deg, #14532d 0%, #166534 100%); }
+  }
+  .gt-explanation h3 { color: var(--green); margin-top: 0; }
+  
+  code { background: var(--bg); padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.85rem; font-family: "SF Mono", Monaco, monospace; border: 1px solid var(--border); }
+  
+  .annotation-viz { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+  .doc-preview { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 1rem; margin: 1rem 0; position: relative; min-height: 200px; }
+  .bbox { position: absolute; border: 2px solid var(--red); background: rgba(220, 38, 38, 0.1); display: flex; align-items: flex-start; justify-content: flex-start; font-size: 0.7rem; color: var(--red); padding: 2px; }
+  .bbox-label { background: var(--red); color: #fff; padding: 1px 4px; border-radius: 2px; font-size: 0.6rem; position: absolute; top: -16px; left: 0; }
+  
+  .highlight-box { background: var(--card); border-left: 4px solid var(--accent); padding: 1rem 1.25rem; margin: 1rem 0; }
+  
+  table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; background: var(--card); }
+  
+  ul { padding-left: 1.5rem; }
+  li { margin: 0.4rem 0; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a class="brand" href="index.html">SDD Benchmark</a>
+  <a href="index.html">Overview</a>
+  <a href="templates.html">Templates</a>
+  <a href="pipeline.html" class="active">Pipeline</a>
+  <a href="variations.html">Variations</a>
+  <a href="paper.html">Paper</a>
+  <a href="doco-fd.html">DoCO-FD</a>
+</nav>
+
+<div class="container">
+  <h1>Template & Ground Truth Pipeline</h1>
+  <p class="subtitle">System architecture for synthetic document generation with pixel-perfect annotations</p>
+
+  <div class="hero">
+    <h2>System Overview</h2>
+    <p>The Synthetic Document Dataset (SDD) generates realistic documents with precise ground truth through a multi-stage pipeline. <strong>HTML is an intermediate representation</strong>—the final outputs are rasterized document images with pixel-accurate bounding box annotations.</p>
+    
+    <p style="margin-top: 1rem;">This approach ensures documents look authentic while providing exact coordinates for every text element, enabling training of document understanding models with perfect supervision.</p>
+  </div>
+
+  <svg viewBox="0 0 900 500" style="width: 100%; height: auto; margin: 2rem 0;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L9,3 z" fill="#666" />
+      </marker>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#2563eb;stop-opacity:0.1" />
+        <stop offset="100%" style="stop-color:#2563eb;stop-opacity:0.3" />
+      </linearGradient>
+      <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#d97706;stop-opacity:0.1" />
+        <stop offset="100%" style="stop-color:#d97706;stop-opacity:0.3" />
+      </linearGradient>
+      <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#16a34a;stop-opacity:0.1" />
+        <stop offset="100%" style="stop-color:#16a34a;stop-opacity:0.3" />
+      </linearGradient>
+    </defs>
+    
+    <!-- Background -->
+    <rect x="0" y="0" width="900" height="500" fill="#fafafa" rx="12"/>
+    
+    <!-- Title -->
+    <text x="450" y="30" text-anchor="middle" font-size="20" font-weight="bold" fill="#1a1a1a">Document Generation Pipeline</text>
+    
+    <!-- Stage 1: Template + Data -->
+    <rect x="50" y="60" width="250" height="120" fill="url(#grad1)" stroke="#2563eb" stroke-width="2" rx="8"/>
+    <text x="175" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#2563eb">Stage 1: Template Engine</text>
+    <rect x="70" y="95" width="100" height="30" fill="#fff" stroke="#2563eb" stroke-width="1" rx="4"/>
+    <text x="120" y="114" text-anchor="middle" font-size="10" fill="#1a1a1a">Jinja2 Template</text>
+    <rect x="180" y="95" width="100" height="30" fill="#fff" stroke="#2563eb" stroke-width="1" rx="4"/>
+    <text x="230" y="114" text-anchor="middle" font-size="10" fill="#1a1a1a">Faker Data</text>
+    <text x="175" y="145" text-anchor="middle" font-size="11" fill="#666">Generates HTML + RDFa</text>
+    
+    <!-- Arrow 1 -->
+    <line x1="300" y1="120" x2="340" y2="120" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="320" y="110" text-anchor="middle" font-size="9" fill="#666">render</text>
+    
+    <!-- Stage 2: Browser Engine -->
+    <rect x="350" y="60" width="200" height="120" fill="url(#grad2)" stroke="#d97706" stroke-width="2" rx="8"/>
+    <text x="450" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#d97706">Stage 2: Browser</text>
+    <rect x="370" y="95" width="160" height="55" fill="#fff" stroke="#d97706" stroke-width="1" rx="4"/>
+    <text x="450" y="115" text-anchor="middle" font-size="11" fill="#1a1a1a">Playwright (Chromium)</text>
+    <text x="450" y="135" text-anchor="middle" font-size="10" fill="#666">Execute JS · Extract DOM</text>
+    
+    <!-- Arrow 2 -->
+    <line x1="550" y1="120" x2="590" y2="120" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="570" y="110" text-anchor="middle" font-size="9" fill="#666">bbox</text>
+    
+    <!-- Stage 3: PDF -->
+    <rect x="600" y="60" width="200" height="120" fill="url(#grad2)" stroke="#d97706" stroke-width="2" rx="8"/>
+    <text x="700" y="85" text-anchor="middle" font-size="14" font-weight="bold" fill="#d97706">Stage 3: PDF Engine</text>
+    <rect x="620" y="95" width="160" height="55" fill="#fff" stroke="#d97706" stroke-width="1" rx="4"/>
+    <text x="700" y="115" text-anchor="middle" font-size="11" fill="#1a1a1a">Paged.js + WeasyPrint</text>
+    <text x="700" y="135" text-anchor="middle" font-size="10" fill="#666">Paginate · Generate PDF</text>
+    
+    <!-- Arrow 3 -->
+    <line x1="700" y1="180" x2="700" y2="220" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Stage 4: Image -->
+    <rect x="600" y="230" width="200" height="120" fill="url(#grad2)" stroke="#d97706" stroke-width="2" rx="8"/>
+    <text x="700" y="255" text-anchor="middle" font-size="14" font-weight="bold" fill="#d97706">Stage 4: Rasterization</text>
+    <rect x="620" y="265" width="160" height="55" fill="#fff" stroke="#d97706" stroke-width="1" rx="4"/>
+    <text x="700" y="285" text-anchor="middle" font-size="11" fill="#1a1a1a">pdf2image (poppler)</text>
+    <text x="700" y="305" text-anchor="middle" font-size="10" fill="#666">300 DPI · JPEG/PNG</text>
+    
+    <!-- Arrow 4 -->
+    <line x1="600" y1="290" x2="560" y2="290" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="580" y="280" text-anchor="middle" font-size="9" fill="#666">align</text>
+    
+    <!-- Stage 5: Ground Truth -->
+    <rect x="350" y="230" width="200" height="120" fill="url(#grad3)" stroke="#16a34a" stroke-width="2" rx="8"/>
+    <text x="450" y="255" text-anchor="middle" font-size="14" font-weight="bold" fill="#16a34a">Stage 5: Ground Truth</text>
+    <rect x="370" y="265" width="160" height="55" fill="#fff" stroke="#16a34a" stroke-width="1" rx="4"/>
+    <text x="450" y="285" text-anchor="middle" font-size="11" fill="#1a1a1a">Bounding Box Coords</text>
+    <text x="450" y="305" text-anchor="middle" font-size="10" fill="#666">JSON · TTL · JSON-LD</text>
+    
+    <!-- Arrow 5 -->
+    <line x1="350" y1="290" x2="310" y2="290" stroke="#666" stroke-width="2" marker-end="url(#arrow)"/>
+    
+    <!-- Final Output -->
+    <rect x="50" y="230" width="250" height="120" fill="#fff" stroke="#16a34a" stroke-width="3" rx="8"/>
+    <text x="175" y="260" text-anchor="middle" font-size="16" font-weight="bold" fill="#16a34a">Final Output</text>
+    <rect x="70" y="275" width="70" height="55" fill="#f0fdf4" stroke="#16a34a" stroke-width="1" rx="4"/>
+    <text x="105" y="300" text-anchor="middle" font-size="9" fill="#166534">Image</text>
+    <text x="105" y="315" text-anchor="middle" font-size="8" fill="#666">.jpg / .png</text>
+    <rect x="150" y="275" width="70" height="55" fill="#f0fdf4" stroke="#16a34a" stroke-width="1" rx="4"/>
+    <text x="185" y="300" text-anchor="middle" font-size="9" fill="#166534">Annotations</text>
+    <text x="185" y="315" text-anchor="middle" font-size="8" fill="#666">.json / .ttl</text>
+    
+    <!-- HTML Note -->
+    <rect x="350" y="380" width="200" height="60" fill="#fef3c7" stroke="#d97706" stroke-width="1" stroke-dasharray="5,5" rx="8"/>
+    <text x="450" y="405" text-anchor="middle" font-size="11" fill="#92400e">HTML is intermediate only</text>
+    <text x="450" y="425" text-anchor="middle" font-size="10" fill="#666">Not a final product</text>
+    
+    <!-- Legend -->
+    <rect x="50" y="380" width="250" height="100" fill="#fff" stroke="#ddd" stroke-width="1" rx="4"/>
+    <text x="60" y="400" font-size="10" font-weight="bold" fill="#666">Pipeline Stages:</text>
+    <rect x="60" y="410" width="12" height="12" fill="#2563eb" rx="2"/>
+    <text x="78" y="420" font-size="9" fill="#666">Input Generation</text>
+    <rect x="60" y="430" width="12" height="12" fill="#d97706" rx="2"/>
+    <text x="78" y="440" font-size="9" fill="#666">Processing (Rendering)</text>
+    <rect x="60" y="450" width="12" height="12" fill="#16a34a" rx="2"/>
+    <text x="78" y="460" font-size="9" fill="#666">Output (GT + Image)</text>
+  </svg>
+
+  <h2>Why This Architecture?</h2>
+  
+  <div class="highlight-box">
+    <p><strong>HTML is a means, not an end.</strong> We use HTML + CSS as an intermediate representation because it provides:</p>
+    <ul style="margin-top: 0.5rem;">
+      <li><strong>Declarative layout</strong> - Complex documents defined with semantic markup</li>
+      <li><strong>Browser-grade rendering</strong> - Realistic typography, spacing, and visual appearance</li>
+      <li><strong>DOM access</strong> - JavaScript can query element positions for exact coordinates</li>
+      <li><strong>Standard tooling</strong> - Well-established PDF generation and rasterization pipelines</li>
+    </ul>
+  </div>
+
+  <h2>Pipeline Stages</h2>
+
+  <div class="pipeline-stage input">
+    <h3><span class="stage-num">1</span> Template Engine</h3>
+    <p>Jinja2 templates define document structure with CSS styling. Faker generates realistic data (names, addresses, amounts). RDFa attributes add semantic markup (DoCO-FD + Schema.org).</p>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h4>Jinja2 Templates</h4>
+        <p>HTML templates with variable substitution for dynamic content generation</p>
+        <div class="tech">Technology: Jinja2</div>
+      </div>
+      <div class="component-card">
+        <h4>Data Generation</h4>
+        <p>Realistic synthetic data for names, companies, addresses, financials, medical codes</p>
+        <div class="tech">Technology: Faker</div>
+      </div>
+      <div class="component-card">
+        <h4>Semantic Markup</h4>
+        <p>RDFa annotations linking visual elements to ontological types</p>
+        <div class="tech">Technology: RDFa · DoCO-FD · Schema.org</div>
+      </div>
+    </div>
+    
+    <p style="margin-top: 1rem;"><strong>Output:</strong> HTML document with data-label attributes on every annotatable element</p>
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <div class="pipeline-stage process">
+    <h3><span class="stage-num">2</span> Browser Engine (Coordinate Extraction)</h3>
+    <p>Playwright loads HTML in headless Chromium and executes JavaScript to extract bounding box coordinates. This is the <strong>critical step</strong> that makes pixel-perfect ground truth possible.</p>
+    
+    <div class="data-flow">
+      <div class="flow-item">
+        <div class="flow-icon">🌐</div>
+        <div class="flow-content">
+          <h4>Load HTML</h4>
+          <p>Render document in headless browser with all CSS applied</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-icon">📐</div>
+        <div class="flow-content">
+          <h4>Query Element Positions</h4>
+          <p>JavaScript walks DOM, queries getBoundingClientRect() for each data-label element</p>
+        </div>
+      </div>
+      <div class="flow-item">
+        <div class="flow-icon">📊</div>
+        <div class="flow-content">
+          <h4>Store Coordinates</h4>
+          <p>Capture [x1, y1, x2, y2] in pixels relative to page, map to entity types</p>
+        </div>
+      </div>
+    </div>
+    
+    <p style="margin-top: 1rem;"><strong>Output:</strong> Coordinate mapping: element_id → [x1, y1, x2, y2, entity_type, text_content]</p>
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <div class="pipeline-stage process">
+    <h3><span class="stage-num">3</span> PDF Generation (Pagination)</h3>
+    <p>Paged.js handles CSS pagination (@page rules, page breaks). WeasyPrint renders paginated HTML to PDF. This produces print-ready documents with realistic page layouts.</p>
+    
+    <div class="component-grid">
+      <div class="component-card">
+        <h4>Paged.js</h4>
+        <p>Client-side pagination library that polyfills CSS Paged Media specification</p>
+        <div class="tech">Technology: JavaScript</div>
+      </div>
+      <div class="component-card">
+        <h4>WeasyPrint</h4>
+        <p>Converts HTML/CSS to PDF with proper font rendering and layout</p>
+        <div class="tech">Technology: Python</div>
+      </div>
+    </div>
+    
+    <p style="margin-top: 1rem;"><strong>Output:</strong> Multi-page PDF document (preserved as intermediate artifact)</p>
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <div class="pipeline-stage process">
+    <h3><span class="stage-num">4</span> Rasterization (Image Generation)</h3>
+    <p>pdf2image converts PDF pages to high-resolution images using poppler-utils. Default 300 DPI produces publication-quality document images suitable for ML training.</p>
+    
+    <p><strong>Resolution:</strong> 300 DPI (default) produces 2480×3508px for A4 pages<br>
+    <strong>Format:</strong> JPEG or PNG<br>
+    <strong>Quality:</strong> Suitable for OCR and document understanding models</p>
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <div class="gt-explanation">
+    <h3>Stage 5: Ground Truth Alignment</h3>
+    <p>The key innovation: <strong>coordinates extracted from Stage 2 (HTML) are scaled to match Stage 4 (Image) dimensions.</strong></p>
+    
+    <p style="margin-top: 0.5rem;">Since we control both the coordinate extraction and the rendering pipeline, we can guarantee that bounding boxes align perfectly with the final image. The scaling factor is calculated from HTML viewport dimensions to final image pixel dimensions.</p>
+  </div>
+
+  <div class="pipeline-stage output">
+    <h3><span class="stage-num">5</span> Final Output Package</h3>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Format</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>{id}.jpg</code></td>
+          <td>JPEG/PNG</td>
+          <td>Rasterized document image (300 DPI)</td>
+        </tr>
+        <tr>
+          <td><code>{id}.json</code></td>
+          <td>JSON</td>
+          <td>Bounding box annotations with entity types</td>
+        </tr>
+        <tr>
+          <td><code>{id}.ttl</code></td>
+          <td>Turtle</td>
+          <td>RDF graph with DoCO-FD + Schema.org semantics</td>
+        </tr>
+        <tr>
+          <td><code>{id}.jsonld</code></td>
+          <td>JSON-LD</td>
+          <td>Linked Data format for web publishing</td>
+        </tr>
+        <tr>
+          <td><code>{id}.pdf</code> (optional)</td>
+          <td>PDF</td>
+          <td>Intermediate PDF artifact</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Bounding Box Ground Truth</h2>
+
+  <div class="annotation-viz">
+    <h4>Annotation Structure</h4>
+    <p>Each document element with a <code>data-label</code> attribute becomes an annotation:</p>
+    
+    <pre><code>{
+  "document_id": "INV_000001",
+  "template_type": "invoice",
+  "width": 2480,
+  "height": 3508,
+  "annotations": [
+    {
+      "label": "invoice_number",
+      "text_content": "INV-2024-001",
+      "box_2d": [245, 180, 290, 420],
+      "entity_type": "INVOICE_NUMBER",
+      "generic_type": "IDENTIFIER"
+    }
+  ]
+}</code></pre>
+
+    <p style="margin-top: 1rem;"><strong>box_2d format:</strong> [x1, y1, x2, y2] in pixels, 0-indexed from top-left</p>
+  </div>
+
+  <h2>Key Advantages</h2>
+
+  <div class="component-grid">
+    <div class="component-card">
+      <h4>🎯 Pixel-Perfect GT</h4>
+      <p>Browser-reported element positions guarantee accurate bounding boxes, unlike heuristics or manual annotation</p>
+    </div>
+    <div class="component-card">
+      <h4>📄 Realistic Documents</h4>
+      <p>Actual browser rendering with real fonts, spacing, and layout—not synthetic approximations</p>
+    </div>
+    <div class="component-card">
+      <h4>🏷️ Rich Semantics</h4>
+      <p>Every annotation has entity type, generic type, and RDF semantic markup</p>
+    </div>
+    <div class="component-card">
+      <h4>🔄 Scalable</h4>
+      <p>Generate thousands of unique documents with automatic ground truth—no manual labeling</p>
+    </div>
+    <div class="component-card">
+      <h4>📐 Multi-Page Support</h4>
+      <p>Pagination produces realistic multi-page documents with per-page annotations</p>
+    </div>
+    <div class="component-card">
+      <h4>🌐 Standards-Based</h4>
+      <p>Uses web standards (HTML, CSS, RDFa) with established tooling</p>
+    </div>
+  </div>
+
+  <h2>Comparison with Alternatives</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Approach</th>
+        <th>GT Accuracy</th>
+        <th>Doc Realism</th>
+        <th>Scalability</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>SDD Pipeline</strong></td>
+        <td><span style="color: var(--green);">✓ Perfect</span></td>
+        <td><span style="color: var(--green);">✓ High</span></td>
+        <td><span style="color: var(--green);">✓ Unlimited</span></td>
+      </tr>
+      <tr>
+        <td>Manual Annotation</td>
+        <td>~95% (human error)</td>
+        <td>✓ Real documents</td>
+        <td>Expensive, slow</td>
+      </tr>
+      <tr>
+        <td>Template + PIL/Pillow</td>
+        <td>✓ Perfect</td>
+        <td>✗ Unrealistic fonts/layout</td>
+        <td>✓ Fast</td>
+      </tr>
+      <tr>
+        <td>GAN Generation</td>
+        <td>✗ No GT</td>
+        <td>~Realistic</td>
+        <td>✓ Fast</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="highlight-box" style="margin-top: 2rem;">
+    <p><strong>Bottom Line:</strong> This pipeline uniquely combines the realism of web rendering with the precision of programmatic coordinate extraction, producing datasets suitable for training production-grade document understanding models.</p>
+  </div>
+
+</div>
+
+</body>
+</html>
