@@ -88,7 +88,7 @@ def make_thumbnail(img: Image.Image, max_w: int = 300) -> Image.Image:
         return img.copy()
     ratio = max_w / img.width
     new_h = int(img.height * ratio)
-    return img.resize((max_w, new_h), Image.LANCZOS)
+    return img.resize((max_w, new_h), Image.Resampling.LANCZOS)
 
 
 # ── Data pipeline ────────────────────────────────────────────────────────────
@@ -207,13 +207,8 @@ def scan_data_dir(data_dir: Path, site_dir: Path):
             # Thumbnail: relative from site/templates.html
             thumb_src = f"assets/inspector/thumbs/{stem}.jpg"
 
-            # Full image: relative from site/ to data_dir/images/
-            img_abs = (images_dir / f"{stem}.jpg").resolve()
-            try:
-                rel = img_abs.relative_to(repo_root.resolve())
-                img_src = "../" + str(rel).replace("\\", "/")
-            except ValueError:
-                img_src = str(img_abs).replace("\\", "/")
+            # Full image: use assets folder for GitHub Pages compatibility
+            img_src = f"assets/inspector/images/{stem}.jpg"
 
             page_buttons_data.append({
                 "page_num": page_num,
@@ -268,6 +263,26 @@ def build_thumbnails(templates_data: list, images_dir: Path, thumbs_dir: Path):
             img = Image.open(img_path)
             thumb = make_thumbnail(img, 300)
             thumb.save(thumb_path, quality=80)
+            count += 1
+    return count
+
+
+def copy_images(templates_data: list, images_dir: Path, dest_dir: Path):
+    """Copy full images to assets folder for GitHub Pages."""
+    import shutil
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    count = 0
+    for tmpl in templates_data:
+        for container in tmpl["page_containers_data"]:
+            stem = container["img_src"].rsplit("/", 1)[-1].replace(".jpg", "")
+            dest_path = dest_dir / f"{stem}.jpg"
+            if dest_path.exists():
+                count += 1
+                continue
+            src_path = images_dir / f"{stem}.jpg"
+            if not src_path.exists():
+                continue
+            shutil.copy2(src_path, dest_path)
             count += 1
     return count
 
@@ -367,6 +382,7 @@ def main():
 
     script_dir = Path(__file__).parent
     thumbs_dir = script_dir / "assets" / "inspector" / "thumbs"
+    images_dest_dir = script_dir / "assets" / "inspector" / "images"
 
     # Use existing templates.html as base instead of archive
     base_html_path = script_dir / "templates.html"
@@ -383,6 +399,10 @@ def main():
     print("\nGenerating thumbnails...")
     n = build_thumbnails(templates_data, data_dir / "images", thumbs_dir)
     print(f"  {n} thumbnails")
+
+    print("\nCopying images to assets...")
+    n = copy_images(templates_data, data_dir / "images", images_dest_dir)
+    print(f"  {n} images")
 
     print("\nBuilding templates.html...")
     build_html(templates_data, categories, base_html_path, script_dir)
